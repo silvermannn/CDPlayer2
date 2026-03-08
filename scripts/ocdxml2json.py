@@ -28,8 +28,8 @@ for lemma in lemmata:
 
     lemmas[id] = {'pos' : pos, 'forms':forms, 'links':{}, 'first':first}
     i += 1
-    if i > 220:
-        break
+    #if i > 10:
+    #    break
 
 """
 <link_types>
@@ -72,27 +72,243 @@ for link in links:
     if lto in lemmas:
         lemmas[lto]['links'][ltype] = lfrom
 
-def printForms(lemma, initial, pos):
-    for word, tags in lemma['forms'].items():
-        print(word, initial, pos, tags)
+
+uPOSTags = [
+    "<>",   # service tag
+    "ADJ",  # adjective
+    "ADP",  # adposition
+    "ADV",  # adverb
+    "AUX",  # auxiliary
+    "CCONJ",# coordinating conjunction
+    "DET",  # determiner
+    "INTJ", # interjection
+    "NOUN", # noun
+    "NUM",  # numeral
+    "PART", # particle
+    "PRON", # pronoun
+    "PROPN",# proper noun
+    "PUNCT",# punctuation
+    "SCONJ",# subordinating conjunction
+    "SYM",  # symbol
+    "VERB", # verb
+    "X"     # other
+    ]
+
+featureNames = [
+    "PronType","Gender","VerbForm","NumType","Animacy","Mood","Poss","Tense","Reflex",
+    "Number","Aspect","Other","Case","Voice","Abbr","Definite","Evident","Typo","Deixis","Polarity",
+    "Foreign","DeixisRef","Person","ExtPos","Degree","Polite","Clusivity","NameType","Subcat","Style",
+    "Variant",   # added for short verbs/adjs
+    "Decl",      # added for noun w/o declension
+    "Lang"       # added for multilingual support
+    ]
+
+featureValues = [
+    "Art", "Dem", "Emp", "Exc", "Ind", "Int", "Neg", "Prs", "Rcp", "Rel",
+    "Tot", "Com", "Fem", "Masc", "Neut", "Conv", "Fin", "Gdv", "Ger", "Inf",
+    "Part", "Sup", "Vnoun", "Card", "Dist", "Frac", "Mult", "Ord", "Range",
+    "Sets", "Anim", "Hum", "Inan", "Nhum", "Adm", "Cnd", "Des", "Imp", "Ind",
+    "Int", "Irr", "Jus", "Nec", "Opt", "Pot", "Prp", "Qot", "Sub", "Yes",
+    "Fut", "Imp", "Past", "Pqp", "Pres", "Yes", "Coll", "Count", "Dual",
+    "Grpa", "Grpl", "Inv", "Pauc", "Plur", "Ptan", "Sing", "Stan", "Tri",
+    "Hab", "Imp", "Iter", "Perf", "Prog", "Prosp", "Abs", "Acc", "Erg", "Nom",
+    "Abe", "Ben", "Cau", "Cmp", "Cns", "Com", "Dat", "Dis", "Equ", "Gen",
+    "Ins", "Par", "Tem", "Tra", "Voc", "Abl", "Add", "Ade", "All", "Del",
+    "Ela", "Ess", "Ill", "Ine", "Lat", "Loc", "Per", "Sbe", "Sbl", "Spl",
+    "Sub", "Sup", "Ter", "Act", "Antip", "Bfoc", "Cau", "Dir", "Inv", "Lfoc",
+    "Mid", "Pass", "Rcp", "Yes", "Com", "Cons", "Def", "Ind", "Spec", "Fh",
+    "Nfh", "Yes", "Abv", "Bel", "Even", "Med", "Nvis", "Prox", "Remt", "Neg",
+    "Pos", "Yes", "1", "2", "0", "1", "2", "3", "4", "ADJ", "ADP", "ADV",
+    "AUX", "CCONJ", "DET", "INTJ", "PRON", "PROPN", "SCONJ", "Abs", "Aug",
+    "Cmp", "Dim", "Equ", "Pos", "Sup", "Elev", "Form", "Humb", "Infm", "Ex",
+    "In", "Com", "Geo", "Giv", "Nat", "Oth", "Pat", "Pro", "Prs", "Sur",
+    "Zoon", "Ditr", "Indir", "Intr", "Tran", "Arch", "Coll", "Expr", "Form",
+    "Rare", "Slng", "Vrnc", "Vulg", "Short", "Zero"
+    ]
+
+posTAGMap = {
+        "ADJS": "ADJ",
+        "ADJF": "ADJ",
+        "ADVB": "ADV",
+        "COMP": "ADJ",
+        "CONJ": "SCONJ",
+        "GRND": "VERB",
+        "INFN": "ADJ",
+        "INTJ": "ADJ",
+        "NOUN": "NOUN",
+        "NPRO": "PRON",
+        "NUMR": "NUM",
+        "PRCL": "PART",
+        "PRED": "ADV",
+        "PREP": "ADP",
+        "PRTF": "VERB",
+        "PRTS": "VERB",
+        "PNCT": "PUNCT",
+        "SYM":  "SYM",
+        "VERB": "VERB"
+    }
+
+posTAGAdditionalTags = {
+        "ADJS": {"Variant": "Short"},
+        "GRND": {"VerbForm":"Ger"},
+        "INFN": {"VerbForm":"Inf"},
+        "PRTF": {"VerbForm":"Part"},
+        "PRTS": {"VerbForm":"Part", "Variant": "Short"}
+    }
+
+tagReplaceMap = {
+        "Ques": {"PronType": "Int"},
+        "Dmns": {"PronType": "Dem"},
+
+        "anim": {"Animacy": "Anim"},
+        "inan": {"Animacy": "Inan"},
+
+        "sing": {"Number": "Sing"},
+        "plur": {"Number": "Plur"},
+        "Sgtm": {"Number": "Sing"},
+        "Pltm": {"Number": "Plur"},
+
+        "Anum": {"NumType": "Ord"},
+        "Coll": {"NumType": "Sets"},
+
+        "masc": {"Gender": "Masc"},
+        "femn": {"Gender": "Fem"},
+        "neut": {"Gender": "Neut"},
+
+        "impf": {"Aspect": "Imp"},
+        "perf": {"Aspect": "Perf"},
+
+        "pres": {"Tense": "Pres"},
+        "past": {"Tense": "Past"},
+        "futr": {"Tense": "Fut"},
+
+        "actv": {"Voice": "Act"},
+        "pssv": {"Voice": "Pass"},
+
+        "impr": {"Mood": "Imp"},
+        "indc": {"Mood": "Ind"},
+
+        "Impe": {"Subcat": "Indir"},
+        "Impx": {"Subcat": "Indir"},
+        "intr": {"Subcat": "Intr"},
+        "tran": {"Subcat": "Tran"},
+
+        "excl": {"Clusivity": "Ex"},
+        "incl": {"Clusivity": "In"},
+
+        "nomn": {"Case": "Nom"},
+        "gent": {"Case": "Gen"},
+        "gen1": {"Case": "Gen"},
+        "gen2": {"Case": "Gen"},
+        "datv": {"Case": "Dat"},
+        "accs": {"Case": "Acc"},
+        "acc2": {"Case": "Acc"},
+        "ablt": {"Case": "Abl"},
+        "loct": {"Case": "Loc"},
+        "loc1": {"Case": "Loc"},
+        "loc2": {"Case": "Loc"},
+        "voct": {"Case": "Voc"},
+
+        "Fixd": {"Decl": "Zero"},
+
+        "1per": {"Person": "1"},
+        "2per": {"Person": "2"},
+        "3per": {"Person": "3"},
+
+        "Abbr": {"Abbr": "Yes"},
+        "Init": {"Abbr": "Yes"},
+        "Name": {"NameType": "Giv"},
+        "Surn": {"NameType": "Sur"},
+        "Patr": {"NameType": "Pat"},
+        "Orgn": {"NameType": "Com"},
+        "Trad": {"NameType": "Com"},
+        "Geox": {"NameType": "Geo"},
+
+        "Supr": {"Degree": "Sup"},
+        "Cmp":  {"Degree": "Cmp"},
+        "Cmp2": {"Degree": "Cmp"},
+        "Poss": {"Poss": "Yes"},
+
+        "Erro": {"Typo": "Yes"},
+        "Dist": {"Style": "Vrnc"},
+        "Slng": {"Style": "Slng"},
+        "Arch": {"Style": "Arch"},
+        "Infr": {"Style": "Vrnc"},
+        "Litr": {"Style": "Form"}
+     }
+
+class Dictionary:
+    def __init__(self):
+        self.posTAGs = {t:i for (t,i) in zip(uPOSTags, range(0, len(uPOSTags)))} 
+        self.fNames = {t:i for (t,i) in zip(featureNames, range(0, len(featureNames)))}
+        self.fValues = {t:i for (t,i) in zip(featureValues, range(0, len(featureValues)))}
+        self.words = {}
+        self.forms = []
+
+    def getWord(self, word):
+        if not word in self.words:
+            self.words[word] = len(self.words)
+        return self.words[word]
+
+    def replaceTags(self, tags):
+        result = {}
+        for tag in tags:
+            if tag in tagReplaceMap:
+                result.update(tagReplaceMap[tag])
+        return result
+
+    def addForms(self, lemma, initial, pos):
+        initialWordId = self.getWord(initial)
+        for word, tags in lemma['forms'].items():
+            wordId = self.getWord(word)
+            if pos in posTAGAdditionalTags:
+                additionalTags = posTAGAdditionalTags[pos]
+            else:
+                additionalTags = {}
+            self.forms.append((wordId, initialWordId, self.posTAGs[posTAGMap[pos]], 
+                               {(self.fNames[k], self.fValues[v]) for (k,v) in (additionalTags | self.replaceTags(tags)).items()}))
+        
+    def print(self):
+        print([self.posTAGs, self.fNames, self.fValues, self.words, self.forms])
+
+dictionary = Dictionary()
 
 for id, lemma in lemmas.items():
     match lemma['pos']:
         case 'VERB':
-            printForms(lemma, lemmas[lemma['links']['3']]['first'], lemma['pos'])
+            if '3' in lemma['links']:
+                dictionary.addForms(lemma, lemmas[lemma['links']['3']]['first'], lemma['pos'])
+            else:
+                dictionary.addForms(lemma, lemma['first'], lemma['pos'])
         case 'PRTF':
-            printForms(lemma, lemmas[lemma['links']['4']]['first'], lemma['pos'])
+            if '4' in lemma['links']:
+                dictionary.addForms(lemma, lemmas[lemma['links']['4']]['first'], lemma['pos'])
+            else:
+                dictionary.addForms(lemma, lemma['first'], lemma['pos'])
         case 'PRTS':
-            full = lemmas[lemma['links']['6']]
-            printForms(lemma, lemmas[full['links']['4']]['first'], lemma['pos'])
+            if '6' in lemma['links']:
+                full = lemmas[lemma['links']['6']]
+                dictionary.addForms(lemma, lemmas[full['links']['4']]['first'], lemma['pos'])
+            else:
+                dictionary.addForms(lemma, lemma['first'], lemma['pos'])
         case 'GRND':
-            printForms(lemma, lemmas[lemma['links']['5']]['first'], lemma['pos'])
+            if '5' in lemma['links']:
+                dictionary.addForms(lemma, lemmas[lemma['links']['5']]['first'], lemma['pos'])
+            else:
+                dictionary.addForms(lemma, lemma['first'], lemma['pos'])
         case 'COMP':
-            printForms(lemma, lemmas[lemma['links']['2']]['first'], lemma['pos'])
+            if '2' in lemma['links']:
+                dictionary.addForms(lemma, lemmas[lemma['links']['2']]['first'], lemma['pos'])
+            else:
+                dictionary.addForms(lemma, lemma['first'], lemma['pos'])
         case 'ADJS':
-            printForms(lemma, lemmas[lemma['links']['1']]['first'], lemma['pos'])
+            if '1' in lemma['links']:
+                dictionary.addForms(lemma, lemmas[lemma['links']['1']]['first'], lemma['pos'])
+            else:
+                dictionary.addForms(lemma, lemma['first'], lemma['pos'])
         case _: 
-            printForms(lemma, lemma['first'], lemma['pos'])
+            dictionary.addForms(lemma, lemma['first'], lemma['pos'])
        
-    print(lemma)
+    #print(lemma)
 
+dictionary.print()
