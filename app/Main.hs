@@ -3,7 +3,7 @@ module Main (main) where
 import Data.Syntax.DependencyTree
 
 tree :: DependencyTree () ()
-tree = singleton () 
+tree = singleton () () 
 
 main :: IO ()
-main = print tree
+main = showDependencyTree tree

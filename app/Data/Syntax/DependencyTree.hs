@@ -1,19 +1,27 @@
+{-# LANGUAGE DeriveAnyClass, NoGeneralizedNewtypeDeriving, DerivingStrategies #-}
+
 module Data.Syntax.DependencyTree where
 
+import Data.Aeson (FromJSON, ToJSON)
+import Data.Bifunctor
 import Data.Tree
+import GHC.Generics
 
 data DependencyTree a b = DependencyTree
   { node :: a
-  , children :: [(b, DependencyTree a b)]
-  } deriving (Show)
+  , relation :: b
+  , children :: [DependencyTree a b]
+  } deriving (Show, Generic, ToJSON, FromJSON, Functor)
 
-singleton ::  a -> DependencyTree a b
-singleton a = DependencyTree a []
+instance Bifunctor DependencyTree where
+  bimap f g (DependencyTree n r chs) =
+    DependencyTree (f n) (g r) (bimap f g <$> chs)
 
-toTree :: b -> DependencyTree a b -> Tree (b, a)
-toTree root dt = go (root, dt)
-  where
-    go (r, DependencyTree n chs) = Node (r, n) $ map go chs
+singleton :: a -> b -> DependencyTree a b
+singleton a r = DependencyTree a r []
 
-showDependencyTree :: (Show a, Show b) => b -> DependencyTree a b -> IO ()
-showDependencyTree root dt = putStrLn $ drawTree $ fmap show $ toTree root dt
+toTree :: DependencyTree a b -> Tree (b, a)
+toTree (DependencyTree n r chs) = Node (r, n) $ map toTree chs
+
+showDependencyTree :: (Show a, Show b) => DependencyTree a b -> IO ()
+showDependencyTree dt = putStrLn $ drawTree $ fmap show $ toTree dt
