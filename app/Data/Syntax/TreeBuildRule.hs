@@ -34,5 +34,8 @@ isFinalResult (Result _ (Sentence tws)) = null tws
 application :: [Rule a] -> [Result b] -> [Result b]
 application rs = concatMap (applyRules rs)
 
-cycle rs start = filter isFinalResult $ concat $ takeWhile (not . null) $ iterate (application rs) [start]
-
+cycle :: [Rule a] -> Result b -> [Result b]
+cycle rs start =
+  concatMap (filter isFinalResult)
+    $ takeWhile (not . null)
+    $ iterate (application rs) [start]

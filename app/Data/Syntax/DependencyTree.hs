@@ -25,3 +25,19 @@ toTree (DependencyTree n r chs) = Node (r, n) $ map toTree chs
 
 showDependencyTree :: (Show a, Show b) => DependencyTree a b -> IO ()
 showDependencyTree dt = putStrLn $ drawTree $ fmap show $ toTree dt
+
+splits :: [a] -> [([a], a, [a])]
+splits [] = []
+splits (a:as) = scanl (\(xs, x, (y:ys)) _ -> (x : xs, y, ys)) ([], a, as) as
+
+searchAndModifyNode ::
+     (a -> Bool)
+  -> (DependencyTree a b -> DependencyTree a b)
+  -> DependencyTree a b
+  -> [DependencyTree a b]
+searchAndModifyNode p m dt@(DependencyTree n r chs) =
+  [m dt | p n]
+    ++ [ DependencyTree n r (pchs ++ (ch' : achs))
+       | (pchs, ch, achs) <- splits chs
+       , ch' <- searchAndModifyNode p m ch
+       ]
