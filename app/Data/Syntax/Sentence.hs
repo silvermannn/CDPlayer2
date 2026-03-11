@@ -1,11 +1,6 @@
 module Data.Syntax.Sentence where
 
-data TaggedWord = SWord
-  { index :: Int
-  , wordId :: Int
-  , tagId :: Int
-  , features :: [(Int, Int)]
-  } deriving (Show)
+import Data.Syntax.Tag
 
 newtype Sentence =
   Sentence [TaggedWord]

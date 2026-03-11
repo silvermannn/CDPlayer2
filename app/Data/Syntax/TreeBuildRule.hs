@@ -1,5 +1,6 @@
 module Data.Syntax.TreeBuildRule where
 
+import Data.Syntax.DependencyRelation
 import Data.Syntax.DependencyTree
 import Data.Syntax.Sentence
 
@@ -19,11 +20,19 @@ data Rule a
   deriving (Show)
 
 data Result b =
-  Result (DependencyTree TaggedWord b) Sentence
+  Result DependencyTree Sentence
+  deriving (Show)
+
+predicate2filter1 (ExactTag _ _) t = True
 
 applyRule :: Rule a -> Result b -> [Result b]
-applyRule (FindRoot _) r = undefined
-applyRule (FindLink _ _ _) r = undefined
+applyRule (FindRoot p) (Result dt s) =
+  [ Result
+    (dt {children = DependencyTree t getRootRelation [] : children dt})
+    (removeUsed t s)
+  | t <- filterBy (predicate2filter1 p) s
+  ]
+applyRule (FindLink _ _ _) r = []
 
 applyRules :: [Rule a] -> Result b -> [Result b]
 applyRules rs r = concatMap (`applyRule` r) rs
