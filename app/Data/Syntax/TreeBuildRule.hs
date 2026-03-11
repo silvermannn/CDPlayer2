@@ -8,15 +8,31 @@ data SearchDirection
   | SearchRight Int
   deriving (Show)
 
-data Rule a
-  = FindRoot a
-  | FindLink SearchDirection a a
+data Predicate
+  = ExactTag Int [(Int, Int)]
+  | Correspondence Int [Int]
   deriving (Show)
 
-applyRule ::
-     Rule a
-  -> DependencyTree b TaggedWord
-  -> Sentence
-  -> [DependencyTree b TaggedWord]
-applyRule (FindRoot _) dt s = undefined
-applyRule (FindLink _ _ _) dt s = undefined
+data Rule a
+  = FindRoot Predicate
+  | FindLink SearchDirection Predicate Predicate
+  deriving (Show)
+
+data Result b =
+  Result (DependencyTree TaggedWord b) Sentence
+
+applyRule :: Rule a -> Result b -> [Result b]
+applyRule (FindRoot _) r = undefined
+applyRule (FindLink _ _ _) r = undefined
+
+applyRules :: [Rule a] -> Result b -> [Result b]
+applyRules rs r = concatMap (flip applyRule r) rs
+
+isFinalResult :: Result b -> Bool
+isFinalResult (Result _ (Sentence tws)) = null tws
+
+application :: [Rule a] -> [Result b] -> [Result b]
+application rs ress = concatMap (applyRules rs) ress
+
+cycle rs start = filter isFinalResult $ concat $ takeWhile (not . null) $ iterate (application rs) [start]
+

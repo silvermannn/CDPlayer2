@@ -5,7 +5,6 @@ data TaggedWord = SWord
   , wordId :: Int
   , tagId :: Int
   , features :: [(Int, Int)]
-  , used :: Bool
   } deriving (Show)
 
 newtype Sentence =
@@ -13,4 +12,7 @@ newtype Sentence =
   deriving (Show)
 
 filterBy :: (TaggedWord -> Bool) -> Sentence -> [TaggedWord]
-filterBy p (Sentence ws) = filter p $ filter (not . used) ws
+filterBy p (Sentence ws) = filter p ws
+
+removeUsed :: TaggedWord -> Sentence -> Sentence
+removeUsed tw (Sentence tws) = Sentence $ filter ((== index tw) . index) tws
