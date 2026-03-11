@@ -26,13 +26,13 @@ applyRule (FindRoot _) r = undefined
 applyRule (FindLink _ _ _) r = undefined
 
 applyRules :: [Rule a] -> Result b -> [Result b]
-applyRules rs r = concatMap (flip applyRule r) rs
+applyRules rs r = concatMap (`applyRule` r) rs
 
 isFinalResult :: Result b -> Bool
 isFinalResult (Result _ (Sentence tws)) = null tws
 
 application :: [Rule a] -> [Result b] -> [Result b]
-application rs ress = concatMap (applyRules rs) ress
+application rs = concatMap (applyRules rs)
 
 cycle rs start = filter isFinalResult $ concat $ takeWhile (not . null) $ iterate (application rs) [start]
 
