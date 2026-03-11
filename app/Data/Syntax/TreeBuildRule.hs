@@ -3,40 +3,48 @@ module Data.Syntax.TreeBuildRule where
 import Data.Syntax.DependencyRelation
 import Data.Syntax.DependencyTree
 import Data.Syntax.Sentence
+import Data.Syntax.Tag
 
 data SearchDirection
   = SearchLeft Int
   | SearchRight Int
   deriving (Show)
 
-data Predicate
-  = ExactTag Int [(Int, Int)]
-  | Correspondence Int [Int]
+data ExactPredicate =
+  ExactPredicate Int [(Int, Int)]
+  deriving (Show)
+
+data CorrespondentPredicate =
+  CorrespondentPredicate SearchDirection Int [(Int, Maybe Int)]
   deriving (Show)
 
 data Rule a
-  = FindRoot Predicate
-  | FindLink SearchDirection Predicate Predicate DependencyRelation
+  = FindRoot ExactPredicate
+  | FindLink ExactPredicate CorrespondentPredicate DependencyRelation
   deriving (Show)
 
 data Result b =
   Result DependencyTree Sentence
   deriving (Show)
 
-predicate2filter1 (ExactTag _ _) t = True
+exactFilter (ExactPredicate tagId _) (SWord _ _ tagId' _) = tagId == tagId'
 
-predicate2filter2 (ExactTag _ _) t1 t2 = True
+correspondentFilter (CorrespondentPredicate _ tagId _) (SWord _ _ _ _) (SWord _ _ tagId2 _) =
+  tagId == tagId2
 
 applyRule :: Rule a -> Result b -> [Result b]
-applyRule (FindRoot p) (Result dt s) =
-  [ Result (insertNode t getRootRelation dt) (removeUsed t s)
-  | t <- filterBy (predicate2filter1 p) s
+applyRule (FindRoot ep) (Result (DependencyTree Nothing) s) =
+  [ Result
+    (DependencyTree $ Just $ DependencyTreeNode t getRootRelation [])
+    (removeUsed t s)
+  | t <- filterBy (exactFilter ep) s
   ]
-applyRule (FindLink dir p1 p2 r) (Result dt s) =
-  [ Result (cont (insertNode t r)) (removeUsed t s)
-  | (cont, t') <- searchAndModifyNode (predicate2filter1 p1) dt
-  , t <- filterBy (predicate2filter2 p2 t') s
+applyRule (FindLink ep cp r) (Result (DependencyTree (Just dt)) s) =
+  [ Result (DependencyTree $ Just $ cont (insertNode t r)) (removeUsed t s)
+  | (cont, t') <- searchAndModifyNode (exactFilter ep) dt
+  , t <- filterBy (correspondentFilter cp t') s
   ]
+applyRule _ _ = []
 
 applyRules :: [Rule a] -> Result b -> [Result b]
 applyRules rs r = concatMap (`applyRule` r) rs
