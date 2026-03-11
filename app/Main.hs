@@ -22,6 +22,8 @@ testRule2 =
     (CorrespondentPredicate (SearchRight 10) 3 [])
     100
 
+testRules = [testRule1, testRule2]
+
 main :: IO ()
 main = do
   showDependencyTree empty
@@ -29,6 +31,9 @@ main = do
   mapM_ showDependencyTree
     $ map (\(Result a _) -> a)
     $ applyRule testRule2 (Result (head added) testSentence)
+  mapM_ showDependencyTree
+    $ map (\(Result a _) -> a)
+    $ cyclicApplication testRules (Result empty testSentence)
   where
     added =
       map (\(Result a _) -> a) $ applyRule testRule1 (Result empty testSentence)

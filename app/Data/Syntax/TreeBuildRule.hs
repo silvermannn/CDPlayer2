@@ -18,12 +18,12 @@ data CorrespondentPredicate =
   CorrespondentPredicate SearchDirection Int [(Int, Maybe Int)]
   deriving (Show)
 
-data Rule a
+data Rule
   = FindRoot ExactPredicate
   | FindLink ExactPredicate CorrespondentPredicate DependencyRelation
   deriving (Show)
 
-data Result b =
+data Result =
   Result DependencyTree Sentence
   deriving (Show)
 
@@ -32,7 +32,7 @@ exactFilter (ExactPredicate tagId _) (SWord _ _ tagId' _) = tagId == tagId'
 correspondentFilter (CorrespondentPredicate _ tagId _) (SWord _ _ _ _) (SWord _ _ tagId2 _) =
   tagId == tagId2
 
-applyRule :: Rule a -> Result b -> [Result b]
+applyRule :: Rule -> Result -> [Result]
 applyRule (FindRoot ep) (Result (DependencyTree Nothing) s) =
   [ Result
     (DependencyTree $ Just $ DependencyTreeNode t getRootRelation [])
@@ -46,17 +46,17 @@ applyRule (FindLink ep cp r) (Result (DependencyTree (Just dt)) s) =
   ]
 applyRule _ _ = []
 
-applyRules :: [Rule a] -> Result b -> [Result b]
+applyRules :: [Rule] -> Result -> [Result]
 applyRules rs r = concatMap (`applyRule` r) rs
 
-isFinalResult :: Result b -> Bool
+isFinalResult :: Result -> Bool
 isFinalResult (Result _ (Sentence tws)) = null tws
 
-application :: [Rule a] -> [Result b] -> [Result b]
+application :: [Rule] -> [Result] -> [Result]
 application rs = concatMap (applyRules rs)
 
-cycle :: [Rule a] -> Result b -> [Result b]
-cycle rs start =
-  concatMap (filter isFinalResult)
+cyclicApplication :: [Rule] -> Result -> [Result]
+cyclicApplication rs start =
+    concatMap id --(filter isFinalResult)
     $ takeWhile (not . null)
     $ iterate (application rs) [start]
