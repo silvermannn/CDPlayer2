@@ -10,4 +10,4 @@ filterBy :: (TaggedWord -> Bool) -> Sentence -> [TaggedWord]
 filterBy p (Sentence ws) = filter p ws
 
 removeUsed :: TaggedWord -> Sentence -> Sentence
-removeUsed tw (Sentence tws) = Sentence $ filter ((== index tw) . index) tws
+removeUsed tw (Sentence tws) = Sentence $ filter ((/= index tw) . index) tws

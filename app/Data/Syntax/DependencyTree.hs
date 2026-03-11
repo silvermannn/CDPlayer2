@@ -2,11 +2,12 @@ module Data.Syntax.DependencyTree where
 
 import Data.Tree
 
-import Data.Syntax.Tag 
 import Data.Syntax.DependencyRelation
+import Data.Syntax.Tag
 
 data DependencyTree = DependencyTree
-  { node :: TaggedWord  , relation :: DependencyRelation
+  { node :: TaggedWord
+  , relation :: DependencyRelation
   , children :: [DependencyTree]
   } deriving (Show)
 
@@ -25,12 +26,15 @@ splits (a:as) = scanl (\(xs, x, y:ys) _ -> (x : xs, y, ys)) ([], a, as) as
 
 searchAndModifyNode ::
      (TaggedWord -> Bool)
-  -> (DependencyTree -> DependencyTree)
   -> DependencyTree
-  -> [DependencyTree]
-searchAndModifyNode p m dt@(DependencyTree n r chs) =
-  [m dt | p n]
-    ++ [ DependencyTree n r (pchs ++ (ch' : achs))
+  -> [((DependencyTree -> DependencyTree) -> DependencyTree, TaggedWord)]
+searchAndModifyNode p dt@(DependencyTree n r chs) =
+  [(\m -> m dt, node dt) | p n]
+    ++ [ (\m -> DependencyTree n r (pchs ++ (cont m : achs)), t')
        | (pchs, ch, achs) <- splits chs
-       , ch' <- searchAndModifyNode p m ch
+       , (cont, t') <- searchAndModifyNode p ch
        ]
+
+insertNode ::
+     TaggedWord -> DependencyRelation -> DependencyTree -> DependencyTree
+insertNode t r dt = dt {children = DependencyTree t r [] : children dt}
