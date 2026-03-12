@@ -23,6 +23,10 @@ data Rule
   | FindLink ExactPredicate CorrespondentPredicate DependencyRelation
   deriving (Show)
 
+newtype RuleSet =
+  RuleSet [Rule]
+  deriving (Show)
+
 data Result =
   Result DependencyTree Sentence
   deriving (Show)
@@ -46,17 +50,14 @@ applyRule (FindLink ep cp r) (Result (DependencyTree (Just dt)) s) =
   ]
 applyRule _ _ = []
 
-applyRules :: [Rule] -> Result -> [Result]
-applyRules rs r = concatMap (`applyRule` r) rs
+applyRules :: RuleSet -> Result -> [Result]
+applyRules (RuleSet rs) r = concatMap (`applyRule` r) rs
 
 isFinalResult :: Result -> Bool
 isFinalResult (Result _ (Sentence tws)) = null tws
 
-application :: [Rule] -> [Result] -> [Result]
-application rs = concatMap (applyRules rs)
-
-cyclicApplication :: [Rule] -> Result -> [Result]
+cyclicApplication :: RuleSet -> Result -> [Result]
 cyclicApplication rs start =
-    concatMap id --(filter isFinalResult)
+  concatMap id --(filter isFinalResult)
     $ takeWhile (not . null)
-    $ iterate (application rs) [start]
+    $ iterate (concatMap $ applyRules rs) [start]

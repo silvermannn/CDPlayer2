@@ -22,7 +22,7 @@ testRule2 =
     (CorrespondentPredicate (SearchRight 10) 3 [])
     100
 
-testRules = [testRule1, testRule2]
+testRules = RuleSet [testRule1, testRule2]
 
 main :: IO ()
 main = do
