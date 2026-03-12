@@ -30,4 +30,3 @@ newtype RuleSet =
 data Result =
   Result DependencyTree Sentence
   deriving (Show)
-

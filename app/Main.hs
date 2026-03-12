@@ -6,17 +6,15 @@ import System.Random
 
 import Data.Syntax.DependencyRelation
 import Data.Syntax.DependencyTree
-import Data.Syntax.Sentence
-import Data.Syntax.Tag
 import Data.Syntax.Rule
 import Data.Syntax.Rule.Application
 import Data.Syntax.Rule.Random
+import Data.Syntax.Sentence
+import Data.Syntax.Tag
 
-testWords = [SWord i i i [] | i <- [1 .. 10]]
+testWords = [SWord i i i [(1, 0), (5, 0)] | i <- [0 .. 10]]
 
 testSentence = Sentence testWords
-
-empty = emptyDependencyTree
 
 testRule1 = FindRoot (ExactPredicate 2 [])
 
@@ -28,23 +26,40 @@ testRule2 =
 
 testRules = RuleSet [testRule1, testRule2]
 
-params = RuleGenerationParams {maxDistance = 10, tagsSize = 20, maxFeaturePairs = 5, featureNamesSize = 10, featureValuesSize = 10, dependencyRelationsSize = 10}
+params =
+  RuleGenerationParams
+    { maxDistance = 10
+    , tagsSize = 20
+    , maxFeaturePairs = 5
+    , featureNamesSize = 10
+    , featureValuesSize = 10
+    , dependencyRelationsSize = 10
+    }
 
 main :: IO ()
 main = do
-  showDependencyTree empty
-  mapM_ showDependencyTree added
+  print testSentence
   mapM_ showDependencyTree
     $ map (\(Result a _) -> a)
-    $ applyRule testRule2 (Result (head added) testSentence)
-  mapM_ showDependencyTree
-    $ map (\(Result a _) -> a)
-    $ cyclicApplication testRules (Result empty testSentence)
-
-  mapM_ print rs    
+    $ parseSentence (RuleSet rs1) testSentence
+  print "--- Random 1"
+  mapM_ print $ rs1
+  print "--- Random 2"
+  mapM_ print $ rs2
+  print "--- Crossover"
+  mapM_ print $ rs3
+  print "--- Mutated 1"
+  mapM_ print $ rs4
+  print "--- Mutated 2"
+  mapM_ print $ rs5
+  print "--- Mutated 3"
+  mapM_ print $ rs6
   print ":DONE!"
   where
-    g = mkStdGen 42
-    (RuleSet rs, g') = generateRandomRuleSet params g 10 
-    added =
-      map (\(Result a _) -> a) $ applyRule testRule1 (Result empty testSentence)
+    g = mkStdGen 31337
+    (RuleSet rs1, g1) = generateRandomRuleSet params g 10
+    (RuleSet rs2, g2) = generateRandomRuleSet params g1 15
+    (RuleSet rs3, g3) = crossover2RuleSets g2 (RuleSet rs1) (RuleSet rs2)
+    (RuleSet rs4, g4) = mutateRuleSet params g3 (RuleSet rs3)
+    (RuleSet rs5, g5) = mutateRuleSet params g4 (RuleSet rs4)
+    (RuleSet rs6, g6) = mutateRuleSet params g5 (RuleSet rs5)

@@ -1,12 +1,13 @@
 module Data.Syntax.Rule.Application where
 
-import Data.Syntax.Rule
 import Data.Syntax.DependencyRelation
 import Data.Syntax.DependencyTree
+import Data.Syntax.Rule
 import Data.Syntax.Sentence
 import Data.Syntax.Tag
 
-exactFilter (ExactPredicate tagId _) (SWord _ _ tagId' _) = tagId == tagId'
+exactFilter (ExactPredicate tagId fs) (SWord _ _ tagId' fs') =
+  tagId == tagId' && and (map (`elem` fs') fs)
 
 correspondentFilter (CorrespondentPredicate _ tagId _) (SWord _ _ _ _) (SWord _ _ tagId2 _) =
   tagId == tagId2
@@ -36,3 +37,6 @@ cyclicApplication rs start =
   concatMap id --(filter isFinalResult)
     $ takeWhile (not . null)
     $ iterate (concatMap $ applyRules rs) [start]
+
+parseSentence :: RuleSet -> Sentence -> [Result]
+parseSentence rs s = cyclicApplication rs (Result emptyDependencyTree s)

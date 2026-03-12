@@ -39,7 +39,7 @@ maxPredicateVariant p =
 int2ExactPredicate :: RuleGenerationParams -> Int -> ExactPredicate
 int2ExactPredicate p n = ExactPredicate t ps
   where
-    (n1, t) = n `divMod` (dependencyRelationsSize p)
+    (n1, t) = n `divMod` (tagsSize p)
     ps = int2Featurepairs p n1
 
 int2CorrespondentPredicate ::
@@ -66,8 +66,87 @@ generateMods :: Int -> [Int] -> (Int, [Int])
 generateMods n xs =
   foldr (\x (n', acc) -> (n' `div` x, (n' `mod` x) : acc)) (n, []) xs
 
-mutateRuleSet :: RandomGen g => g -> RuleSet -> ([Rule], g)
-mutateRuleSet = undefined
+mutateRule :: RuleGenerationParams -> Rule -> Int -> Rule
+mutateRule p r n =
+  case r of
+    (FindRoot ep@(ExactPredicate t fps)) ->
+      case op `mod` 5 of
+        0 -> FindLink ep (int2CorrespondentPredicate p n'') dr'
+        1 -> FindRoot (ExactPredicate t' fps)
+        2 -> FindRoot (ExactPredicate t (fps1 ++ fps2))
+        3 -> FindRoot (ExactPredicate t (fps1 ++ (fn, fv) : fps2))
+        4 -> FindRoot ep
+      where
+        (fps1, fp:fps2) = splitAt i fps
+        (n'', i) = n' `divMod` (length fps)
+    (FindLink ep@(ExactPredicate t fps) cp@(CorrespondentPredicate sd t2 fpsc) dr) ->
+      case op of
+        0 -> FindRoot ep
+        1 -> FindLink (ExactPredicate t' fps) cp dr
+        2 -> FindLink (ExactPredicate t (fps1 ++ fps2)) cp dr
+        3 -> FindLink (ExactPredicate t (fps1 ++ (fn, fv) : fps2)) cp dr
+        4 -> FindLink ep (CorrespondentPredicate sd t' fpsc) dr
+        5 -> FindLink ep (CorrespondentPredicate sd t2 (fps21 ++ fps22)) dr
+        6 ->
+          FindLink
+            ep
+            (CorrespondentPredicate sd t2 (fps21 ++ (fn, Just fv) : fps22))
+            dr
+        7 ->
+          FindLink
+            ep
+            (CorrespondentPredicate sd t2 (fps21 ++ (fn, Nothing) : fps22))
+            dr
+        8 ->
+          FindLink
+            ep
+            (CorrespondentPredicate sd t2 (fps21 ++ (fn2, Nothing) : fps22))
+            dr
+        9 ->
+          FindLink
+            ep
+            (CorrespondentPredicate
+               (if sd' == 0
+                  then SearchLeft sdd
+                  else SearchRight sdd)
+               t2
+               fpsc)
+            dr
+        10 -> FindLink ep (CorrespondentPredicate sd t2 fpsc) dr'
+      where
+        (fps1, fp:fps2) = splitAt i fps
+        (fps21, (fn2, _):fps22) = splitAt i fpsc
+        (n'', i) = n' `divMod` (length fps)
+  where
+    (n', [op, t', dr', fn, fv, sd', sdd]) =
+      generateMods
+        n
+        [ 11
+        , tagsSize p
+        , dependencyRelationsSize p
+        , featureNamesSize p
+        , featureValuesSize p
+        , 2
+        , maxDistance p
+        ]
 
-crossover2RuleSets :: RandomGen g => g -> RuleSet -> RuleSet -> (Rule, g)
-crossover2RuleSets = undefined
+mutateRuleSet ::
+     RandomGen g => RuleGenerationParams -> g -> RuleSet -> (RuleSet, g)
+mutateRuleSet p g (RuleSet rs) =
+  ( case 2 of
+      0 -> RuleSet (rs1 ++ rs2) -- delete rule from set
+      1 -> RuleSet (rs1 ++ int2Rule p n' : r : rs2) -- insert new random rule
+      2 -> RuleSet (rs1 ++ mutateRule p r n' : rs2)
+      3 -> RuleSet rs
+  , g')
+  where
+    (n, g') = uniform g
+    (n', [op, i]) = generateMods n [4, (length rs - 1)]
+    (rs1, r:rs2) = splitAt i rs
+
+crossover2RuleSets :: RandomGen g => g -> RuleSet -> RuleSet -> (RuleSet, g)
+crossover2RuleSets g (RuleSet rs1) (RuleSet rs2) =
+  (RuleSet $ take n' rs1 ++ drop n' rs2, g')
+  where
+    (n, g') = uniform g
+    n' = n `mod` (min (length rs1) (length rs2))
