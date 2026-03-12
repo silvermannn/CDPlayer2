@@ -1,35 +1,10 @@
-module Data.Syntax.TreeBuildRule where
+module Data.Syntax.Rule.Application where
 
+import Data.Syntax.Rule
 import Data.Syntax.DependencyRelation
 import Data.Syntax.DependencyTree
 import Data.Syntax.Sentence
 import Data.Syntax.Tag
-
-data SearchDirection
-  = SearchLeft Int
-  | SearchRight Int
-  deriving (Show)
-
-data ExactPredicate =
-  ExactPredicate Int [(Int, Int)]
-  deriving (Show)
-
-data CorrespondentPredicate =
-  CorrespondentPredicate SearchDirection Int [(Int, Maybe Int)]
-  deriving (Show)
-
-data Rule
-  = FindRoot ExactPredicate
-  | FindLink ExactPredicate CorrespondentPredicate DependencyRelation
-  deriving (Show)
-
-newtype RuleSet =
-  RuleSet [Rule]
-  deriving (Show)
-
-data Result =
-  Result DependencyTree Sentence
-  deriving (Show)
 
 exactFilter (ExactPredicate tagId _) (SWord _ _ tagId' _) = tagId == tagId'
 

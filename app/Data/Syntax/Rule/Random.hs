@@ -1,10 +1,10 @@
-module Data.Syntax.Random where
+module Data.Syntax.Rule.Random where
 
 import System.Random
 
 import Data.List
 
-import Data.Syntax.TreeBuildRule
+import Data.Syntax.Rule
 
 data RuleGenerationParams = RuleGenerationParams
   { maxDistance :: Int
