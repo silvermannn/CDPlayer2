@@ -19,3 +19,10 @@ generateRandomMax m = do
   let (r, gen') = uniformR (toEnum 0, m) gen
   put gen'
   return r
+
+shuffle :: [a] -> StatefulRandom [a]
+shuffle xs = do
+  gen <- get
+  let (r, gen') = uniformShuffleList xs gen
+  put gen'
+  return r

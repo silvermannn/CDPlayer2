@@ -11,11 +11,12 @@ import Data.Syntax.DependencyRelation
 import Data.Syntax.DependencyTree
 import Data.Syntax.Rule
 import Data.Syntax.Rule.Application
+import Data.Syntax.Rule.Evolution
 import Data.Syntax.Rule.Random
 import Data.Syntax.Sentence
 import Data.Syntax.Tag
 
-testWords = [SWord i i i [(1, 0), (5, 0)] | i <- [0 .. 10]]
+testWords = [SWord i i i [] | i <- [0 .. 19]]
 
 testSentence = Sentence testWords
 
@@ -35,27 +36,36 @@ params =
     , dependencyRelationsSize = 10
     }
 
+evolParams =
+  EvolutionParameters
+    { maxPopulationSize = 100
+    , maxRulesetSize = 30
+    , mutationRate = 0.1
+    , survivalRate = 0.5
+    , generationParams = params
+    }
+
 main :: IO ()
 main = do
   print testSentence
-  print params
-  mapM_ showDependencyTree $ map (\(Result a _) -> a) $ parseSentence (RuleSet rs1) testSentence
-  print "--- Random 1"
-  mapM_ print $ rs1
-  print "--- Random 2"
-  mapM_ print $ rs2
-  print "--- Crossover"
-  mapM_ print $ rs3
-  print "--- Mutated 1"
-  mapM_ print $ rs4
-  print "--- Mutated 2"
-  mapM_ print $ rs5
-  print "--- Mutated 3"
-  mapM_ print $ rs6
+  print evolParams
+  
+  print "best rule 1"
+  mapM_ print rs2
+  showDependencyTree $ last $ map (\(Result a _) -> a) $ parseSentence (RuleSet rs2) testSentence
+  print "best rule 2"
+  print (rss2 == rss3)
+  print (rs2 == rs3)
+  mapM_ print rs3
+  showDependencyTree $ last $ map (\(Result a _) -> a) $ parseSentence (RuleSet rs3) testSentence
   print ":DONE!"
   where
     g = mkStdGen 31337
-    ([RuleSet rs1, RuleSet rs2], g2) = runState (replicateM 2 (generateRuleSet params 10)) g
-    (RuleSet rs3, g3) = runState (crossover2RuleSets (RuleSet rs1) (RuleSet rs2)) g2
-    ([RuleSet rs4, RuleSet rs5, RuleSet rs6], g6) =
-      runState (replicateM 3 $ mutateRuleSet params (RuleSet rs3)) g3
+    (ps1, g1) = runState (generateInitialPopulation evolParams) g
+    (ps2, g2) = runState (evolutionStep evolParams emptyDependencyTree testSentence ps1) g1
+    (Population rss2) = ps2
+    (RuleSet rs2) = head rss2
+    (evol, g3) = runState (infiniteEvolution evolParams emptyDependencyTree testSentence ps2) g2
+    ps3 = last $ take 55555 evol
+    (Population rss3) = ps3
+    (RuleSet rs3) = head rss3

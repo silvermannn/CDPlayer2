@@ -1,13 +1,18 @@
 module Data.Syntax.Rule.Evolution where
 
 import Control.Monad
-import Control.Monad.State
+import Control.Monad.Extra
+
+import Data.Function
+import Data.List
 
 import Data.Random.Stateful
+import Data.Syntax.DependencyTree
 import Data.Syntax.Rule
 import Data.Syntax.Rule.Application
 import Data.Syntax.Rule.Evaluation
 import Data.Syntax.Rule.Random
+import Data.Syntax.Sentence
 
 data EvolutionParameters = EvolutionParameters
   { maxPopulationSize :: Int
@@ -23,13 +28,63 @@ newtype Population =
 generateInitialPopulation :: EvolutionParameters -> StatefulRandom Population
 generateInitialPopulation p =
   Population
-    <$> replicateM (maxPopulationSize p) (generateRuleSet (generationParams p) (maxRulesetSize p))
+    <$> replicateM
+          (maxPopulationSize p)
+          (generateRuleSet (generationParams p) (maxRulesetSize p))
 
 makeMutations :: EvolutionParameters -> Population -> StatefulRandom Population
-makeMutations = undefined
+makeMutations p (Population rs) = do
+  rs' <- mapM (makeMutation p) rs
+  return $ Population rs'
 
-makeCrossovers :: EvolutionParameters -> Population -> Population -> StatefulRandom Population
-makeCrossovers = undefined
+mutationMultiplier :: Int
+mutationMultiplier = 10000
 
-cutPopulation :: EvolutionParameters -> Population -> StatefulRandom Population
-cutPopulation = undefined
+makeMutation :: EvolutionParameters -> RuleSet -> StatefulRandom RuleSet
+makeMutation p rs = do
+  n <- generateRandomMax mutationMultiplier
+  if n > truncate (fromIntegral mutationMultiplier * mutationRate p)
+    then return rs
+    else mutateRuleSet (generationParams p) rs
+
+makeCrossovers :: EvolutionParameters -> Population -> StatefulRandom Population
+makeCrossovers p (Population rs) = do
+  srs <- shuffle rs
+  rs' <- zipWithM crossover2RuleSets (take m $ cycle rs) (cycle srs)
+  return $ Population (rs ++ rs')
+  where
+    m = maxPopulationSize p - length rs
+
+cutPopulation ::
+     EvolutionParameters
+  -> Population
+  -> DependencyTree
+  -> Sentence
+  -> StatefulRandom Population
+cutPopulation p (Population rs) dt s = return $ Population survived
+  where
+    ress = map (`parseSentence` s) rs
+    scores = zipWith (evaluateResults dt) ress rs
+    survived =
+      take survivedN $ map fst $ sortBy (compare `on` snd) $ zip rs scores
+    survivedN = ceiling (fromIntegral (length rs) * survivalRate p)
+
+evolutionStep ::
+     EvolutionParameters
+  -> DependencyTree
+  -> Sentence
+  -> Population
+  -> StatefulRandom Population
+evolutionStep p dt s ps = do
+  survived <- cutPopulation p ps dt s
+  crossed <- makeCrossovers p survived
+  mutated <- makeMutations p crossed
+  return mutated
+
+infiniteEvolution ::
+     EvolutionParameters
+  -> DependencyTree
+  -> Sentence
+  -> Population
+  -> StatefulRandom [Population]
+infiniteEvolution p dt s ps = iterateM (evolutionStep p dt s) ps

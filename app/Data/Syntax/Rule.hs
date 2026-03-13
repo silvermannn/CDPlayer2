@@ -12,21 +12,21 @@ import Data.Syntax.Tag
 data SearchDirection
   = SearchLeft
   | SearchRight
-  deriving (Show, Generic, Finite, Uniform)
+  deriving (Show, Eq, Generic, Finite, Uniform)
 
 data Predicate = Predicate
   { predicateTag :: Int
   , predicateFeaturePairs :: [(Int, Maybe Int)]
-  } deriving (Show)
+  } deriving (Show, Eq)
 
 data Rule
   = FindRoot Predicate
   | FindLink Predicate Predicate SearchDirection Int DependencyRelation
-  deriving (Show)
+  deriving (Show, Eq)
 
 newtype RuleSet =
   RuleSet [Rule]
-  deriving (Show)
+  deriving (Show, Eq)
 
 data Result =
   Result DependencyTree Sentence
