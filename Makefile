@@ -15,7 +15,7 @@ hindent:
 
 edit:
 	cabal clean
-	vim -p `find . -name '*.hs' -type f`
+	vim -p $(sourceFiles)
 
 hlint:
 	hlint -v --no-exit-code --report --with-group=generalise-for-conciseness --with-group=extra --with-group=teaching .
