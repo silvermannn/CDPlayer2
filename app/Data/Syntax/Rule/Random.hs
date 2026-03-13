@@ -37,8 +37,7 @@ data MutationRule
   | MutateCorrespondentDependencyRelation
   deriving (Show, Enum, Bounded)
 
-generateRandomRuleSet ::
-     RandomGen g => RuleGenerationParams -> g -> Int -> (RuleSet, g)
+generateRandomRuleSet :: RandomGen g => RuleGenerationParams -> g -> Int -> (RuleSet, g)
 generateRandomRuleSet p g n = (RuleSet $ map (int2Rule p) xs, g')
   where
     (xs, g') = uniformList n g
@@ -64,13 +63,10 @@ int2ExactPredicate p n = ExactPredicate t ps
     (n1, t) = n `divMod` (tagsSize p)
     ps = int2Featurepairs p n1
 
-int2CorrespondentPredicate ::
-     RuleGenerationParams -> Int -> CorrespondentPredicate
-int2CorrespondentPredicate p n =
-  CorrespondentPredicate (sd sdd) t (map (fmap Just) ps)
+int2CorrespondentPredicate :: RuleGenerationParams -> Int -> CorrespondentPredicate
+int2CorrespondentPredicate p n = CorrespondentPredicate (sd sdd) t (map (fmap Just) ps)
   where
-    (n1, [t, sdi, sdd]) =
-      generateMods n [dependencyRelationsSize p, 2, maxDistance p]
+    (n1, [t, sdi, sdd]) = generateMods n [dependencyRelationsSize p, 2, maxDistance p]
     sd =
       if sdi == 0
         then SearchLeft
@@ -85,8 +81,7 @@ int2Featurepairs p n = zip (nub fns) fvs
     (_, fvs) = generateMods n2 $ replicate size (featureValuesSize p)
 
 generateMods :: Int -> [Int] -> (Int, [Int])
-generateMods n xs =
-  foldr (\x (n', acc) -> (n' `div` x, (n' `mod` x) : acc)) (n, []) xs
+generateMods n xs = foldr (\x (n', acc) -> (n' `div` x, (n' `mod` x) : acc)) (n, []) xs
 
 mutateRule :: RuleGenerationParams -> Rule -> Int -> Rule
 mutateRule p r n =
@@ -96,10 +91,8 @@ mutateRule p r n =
         Convert -> FindLink ep (int2CorrespondentPredicate p n'') dr'
         MutateExactTag -> FindRoot (ExactPredicate t' fps)
         DeleteExactFeaturePair -> FindRoot (ExactPredicate t (fps1 ++ fps2))
-        AddExactFeaturePair ->
-          FindRoot (ExactPredicate t (fps1 ++ (fn, fv) : fp : fps2))
-        MutateExactFeaturePair ->
-          FindRoot (ExactPredicate t (fps1 ++ (fn, fv) : fps2))
+        AddExactFeaturePair -> FindRoot (ExactPredicate t (fps1 ++ (fn, fv) : fp : fps2))
+        MutateExactFeaturePair -> FindRoot (ExactPredicate t (fps1 ++ (fn, fv) : fps2))
         _ -> error "Cannot mutate"
       where
         (fps1, fp:fps2) = splitAt i fps
@@ -108,36 +101,20 @@ mutateRule p r n =
       case toEnum op of
         Convert -> FindRoot ep
         MutateExactTag -> FindLink (ExactPredicate t' fps) cp dr
-        DeleteExactFeaturePair ->
-          FindLink (ExactPredicate t (fps1 ++ fps2)) cp dr
-        AddExactFeaturePair ->
-          FindLink (ExactPredicate t (fps1 ++ (fn, fv) : fp : fps2)) cp dr
-        MutateExactFeaturePair ->
-          FindLink (ExactPredicate t (fps1 ++ (fn, fv) : fps2)) cp dr
-        MutateCorrespondentTag ->
-          FindLink ep (CorrespondentPredicate sd t' fpsc) dr
+        DeleteExactFeaturePair -> FindLink (ExactPredicate t (fps1 ++ fps2)) cp dr
+        AddExactFeaturePair -> FindLink (ExactPredicate t (fps1 ++ (fn, fv) : fp : fps2)) cp dr
+        MutateExactFeaturePair -> FindLink (ExactPredicate t (fps1 ++ (fn, fv) : fps2)) cp dr
+        MutateCorrespondentTag -> FindLink ep (CorrespondentPredicate sd t' fpsc) dr
         DeleteCorrespondentFeaturePair ->
           FindLink ep (CorrespondentPredicate sd t2 (fps21 ++ fps22)) dr
         MutateCorrespondentFeaturePair ->
-          FindLink
-            ep
-            (CorrespondentPredicate sd t2 (fps21 ++ (fn, Just fv) : fps22))
-            dr
+          FindLink ep (CorrespondentPredicate sd t2 (fps21 ++ (fn, Just fv) : fps22)) dr
         MutateCorrespondentFeaturePairSetValueNothing ->
-          FindLink
-            ep
-            (CorrespondentPredicate sd t2 (fps21 ++ (fn, Nothing) : fps22))
-            dr
+          FindLink ep (CorrespondentPredicate sd t2 (fps21 ++ (fn, Nothing) : fps22)) dr
         MutateCorrespondentFeaturePairWithValue ->
-          FindLink
-            ep
-            (CorrespondentPredicate sd t2 (fps21 ++ (fn2, Just fv) : fps22))
-            dr
+          FindLink ep (CorrespondentPredicate sd t2 (fps21 ++ (fn2, Just fv) : fps22)) dr
         MutateCorrespondentFeaturePairWithValueNothing ->
-          FindLink
-            ep
-            (CorrespondentPredicate sd t2 (fps21 ++ (fn2, Nothing) : fps22))
-            dr
+          FindLink ep (CorrespondentPredicate sd t2 (fps21 ++ (fn2, Nothing) : fps22)) dr
         MutateCorrespondentSearchDirection ->
           FindLink
             ep
@@ -148,8 +125,7 @@ mutateRule p r n =
                t2
                fpsc)
             dr
-        MutateCorrespondentDependencyRelation ->
-          FindLink ep (CorrespondentPredicate sd t2 fpsc) dr'
+        MutateCorrespondentDependencyRelation -> FindLink ep (CorrespondentPredicate sd t2 fpsc) dr'
       where
         (fps1, fp:fps2) = splitAt i fps
         (fps21, (fn2, _):fps22) = splitAt i fpsc
@@ -167,8 +143,7 @@ mutateRule p r n =
         , maxDistance p
         ]
 
-mutateRuleSet ::
-     RandomGen g => RuleGenerationParams -> g -> RuleSet -> (RuleSet, g)
+mutateRuleSet :: RandomGen g => RuleGenerationParams -> g -> RuleSet -> (RuleSet, g)
 mutateRuleSet p g (RuleSet rs) =
   ( case toEnum op of
       DeleteRule -> RuleSet (rs1 ++ rs2)
@@ -177,15 +152,11 @@ mutateRuleSet p g (RuleSet rs) =
   , g')
   where
     (n, g') = uniform g
-    (n', [op, i]) =
-      generateMods
-        n
-        [1 + fromEnum (maxBound :: MutationRuleSet), (length rs - 1)]
+    (n', [op, i]) = generateMods n [1 + fromEnum (maxBound :: MutationRuleSet), (length rs - 1)]
     (rs1, r:rs2) = splitAt i rs
 
 crossover2RuleSets :: RandomGen g => g -> RuleSet -> RuleSet -> (RuleSet, g)
-crossover2RuleSets g (RuleSet rs1) (RuleSet rs2) =
-  (RuleSet $ take n' rs1 ++ drop n' rs2, g')
+crossover2RuleSets g (RuleSet rs1) (RuleSet rs2) = (RuleSet $ take n' rs1 ++ drop n' rs2, g')
   where
     (n, g') = uniform g
     n' = n `mod` (min (length rs1) (length rs2))

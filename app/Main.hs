@@ -18,11 +18,7 @@ testSentence = Sentence testWords
 
 testRule1 = FindRoot (ExactPredicate 2 [])
 
-testRule2 =
-  FindLink
-    (ExactPredicate 2 [])
-    (CorrespondentPredicate (SearchRight 10) 3 [])
-    100
+testRule2 = FindLink (ExactPredicate 2 []) (CorrespondentPredicate (SearchRight 10) 3 []) 100
 
 testRules = RuleSet [testRule1, testRule2]
 
@@ -39,9 +35,7 @@ params =
 main :: IO ()
 main = do
   print testSentence
-  mapM_ showDependencyTree
-    $ map (\(Result a _) -> a)
-    $ parseSentence (RuleSet rs1) testSentence
+  mapM_ showDependencyTree $ map (\(Result a _) -> a) $ parseSentence (RuleSet rs1) testSentence
   print "--- Random 1"
   mapM_ print $ rs1
   print "--- Random 2"

@@ -20,15 +20,13 @@ emptyDependencyTree :: DependencyTree
 emptyDependencyTree = DependencyTree Nothing
 
 nodeToTree :: DependencyTreeNode -> Tree String
-nodeToTree (DependencyTreeNode n r chs) =
-  Node (show (r, n)) $ map nodeToTree chs
+nodeToTree (DependencyTreeNode n r chs) = Node (show (r, n)) $ map nodeToTree chs
 
 showDependencyTreeNode :: DependencyTreeNode -> IO ()
 showDependencyTreeNode dt = putStrLn $ drawTree $ nodeToTree dt
 
 dependencyTreeToTree :: DependencyTree -> Tree String
-dependencyTreeToTree (DependencyTree mch) =
-  Node "<root>" $ maybe [] (pure . nodeToTree) mch
+dependencyTreeToTree (DependencyTree mch) = Node "<root>" $ maybe [] (pure . nodeToTree) mch
 
 showDependencyTree :: DependencyTree -> IO ()
 showDependencyTree dt = putStrLn $ drawTree $ dependencyTreeToTree dt
@@ -40,8 +38,7 @@ splits (a:as) = scanl (\(xs, x, y:ys) _ -> (x : xs, y, ys)) ([], a, as) as
 searchAndModifyNode ::
      (TaggedWord -> Bool)
   -> DependencyTreeNode
-  -> [( (DependencyTreeNode -> DependencyTreeNode) -> DependencyTreeNode
-      , TaggedWord)]
+  -> [((DependencyTreeNode -> DependencyTreeNode) -> DependencyTreeNode, TaggedWord)]
 searchAndModifyNode p dt@(DependencyTreeNode n r chs) =
   [(\m -> m dt, node dt) | p n]
     ++ [ (\m -> DependencyTreeNode n r (pchs ++ (cont m : achs)), t')
@@ -52,14 +49,8 @@ searchAndModifyNode p dt@(DependencyTreeNode n r chs) =
 searchAndModifyTree ::
      (TaggedWord -> Bool)
   -> DependencyTree
-  -> [( (DependencyTreeNode -> DependencyTreeNode) -> DependencyTreeNode
-      , TaggedWord)]
-searchAndModifyTree p (DependencyTree mch) =
-  maybe [] (searchAndModifyNode p) mch
+  -> [((DependencyTreeNode -> DependencyTreeNode) -> DependencyTreeNode, TaggedWord)]
+searchAndModifyTree p (DependencyTree mch) = maybe [] (searchAndModifyNode p) mch
 
-insertNode ::
-     TaggedWord
-  -> DependencyRelation
-  -> DependencyTreeNode
-  -> DependencyTreeNode
+insertNode :: TaggedWord -> DependencyRelation -> DependencyTreeNode -> DependencyTreeNode
 insertNode t r dt = dt {children = DependencyTreeNode t r [] : children dt}

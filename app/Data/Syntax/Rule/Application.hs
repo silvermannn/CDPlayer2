@@ -14,9 +14,7 @@ correspondentFilter (CorrespondentPredicate _ tagId _) (SWord _ _ _ _) (SWord _ 
 
 applyRule :: Rule -> Result -> [Result]
 applyRule (FindRoot ep) (Result (DependencyTree Nothing) s) =
-  [ Result
-    (DependencyTree $ Just $ DependencyTreeNode t getRootRelation [])
-    (removeUsed t s)
+  [ Result (DependencyTree $ Just $ DependencyTreeNode t getRootRelation []) (removeUsed t s)
   | t <- filterBy (exactFilter ep) s
   ]
 applyRule (FindLink ep cp r) (Result (DependencyTree (Just dt)) s) =
