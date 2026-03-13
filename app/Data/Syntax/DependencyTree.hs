@@ -54,3 +54,6 @@ searchAndModifyTree p (DependencyTree mch) = maybe [] (searchAndModifyNode p) mc
 
 insertNode :: TaggedWord -> DependencyRelation -> DependencyTreeNode -> DependencyTreeNode
 insertNode t r dt = dt {children = DependencyTreeNode t r [] : children dt}
+
+calcDependancyTreeDifference :: DependencyTree -> DependencyTree -> Int
+calcDependancyTreeDifference dt1 dt2 = 0
