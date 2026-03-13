@@ -2,8 +2,13 @@ module Data.Syntax.Rule.Random where
 
 import System.Random
 
+import Control.Monad
+
 import Data.List
 
+import GHC.Generics
+
+import Data.Random.Stateful
 import Data.Syntax.Rule
 
 data RuleGenerationParams = RuleGenerationParams
@@ -19,144 +24,131 @@ data MutationRuleSet
   = DeleteRule
   | InsertRule
   | MutateRule
-  deriving (Show, Enum, Bounded)
+  deriving (Show, Enum, Bounded, Generic, Finite, Uniform)
 
-data MutationRule
-  = Convert
-  | MutateExactTag
-  | DeleteExactFeaturePair
-  | AddExactFeaturePair
-  | MutateExactFeaturePair
-  | DeleteCorrespondentFeaturePair
-  | MutateCorrespondentTag
-  | MutateCorrespondentFeaturePair
-  | MutateCorrespondentFeaturePairSetValueNothing
-  | MutateCorrespondentFeaturePairWithValue
-  | MutateCorrespondentFeaturePairWithValueNothing
-  | MutateCorrespondentSearchDirection
-  | MutateCorrespondentDependencyRelation
-  deriving (Show, Enum, Bounded)
+data MutationPredicate
+  = MutatePredicateTag
+  | DeletePredicateFeaturePair
+  | MutatePredicateFeaturePair
+  | AddPredicateFeaturePair
+  deriving (Show, Enum, Bounded, Generic, Finite, Uniform)
 
-generateRandomRuleSet :: RandomGen g => RuleGenerationParams -> g -> Int -> (RuleSet, g)
-generateRandomRuleSet p g n = (RuleSet $ map (int2Rule p) xs, g')
+data MutationiRootRule
+  = ConvertRootToLink
+  | MutateRootPredicate
+  deriving (Show, Enum, Bounded, Generic, Finite, Uniform)
+
+data MutationLinkRule
+  = ConvertLinkToRoot
+  | MutateLinkPredicate
+  | MutateCorrespondentPredicate
+  | MutateSearchDirection
+  | MutateSearchDistance
+  | MutateDependencyRelation
+  deriving (Show, Enum, Bounded, Generic, Finite, Uniform)
+
+generateRuleSet :: RuleGenerationParams -> Int -> StatefulRandom RuleSet
+generateRuleSet p size = do
+  rs <- replicateM size $ generateRule p
+  return $ RuleSet rs
+
+generateRule :: RuleGenerationParams -> StatefulRandom Rule
+generateRule p = do
+  isFindRoot <- generateRandom
+  ep <- generatePredicate p
+  cp <- generatePredicate p
+  sd <- generateRandom
+  sdd <- generateRandomMax (maxDistance p)
+  dr <- generateRandomMax (dependencyRelationsSize p)
+  if isFindRoot
+    then return (FindRoot ep)
+    else return (FindLink ep cp sd sdd dr)
+
+generatePredicate :: RuleGenerationParams -> StatefulRandom Predicate
+generatePredicate p = do
+  tag <- generateRandomMax (tagsSize p)
+  fps <- generateFeaturePairs p
+  return $ Predicate tag (map (fmap Just) fps)
+
+generateFeaturePairs :: RuleGenerationParams -> StatefulRandom [(Int, Int)]
+generateFeaturePairs p = do
+  size <- generateRandomMax (maxFeaturePairs p)
+  fns <- replicateM size $ generateRandomMax (featureNamesSize p)
+  fvs <- replicateM size $ generateRandomMax (featureValuesSize p)
+  return $ zip fns fvs
+
+mutatePredicate :: RuleGenerationParams -> Predicate -> StatefulRandom Predicate
+mutatePredicate p pr = do
+  op <- generateRandom
+  n <- generateRandomMax $ length (predicateFeaturePairs pr) - 1
+  let (fps1, fp:fps2) = splitAt n (predicateFeaturePairs pr)
+   in case op of
+        MutatePredicateTag -> do
+          tag <- generateRandomMax (tagsSize p)
+          return $ pr {predicateTag = tag}
+        DeletePredicateFeaturePair -> do
+          return $ pr {predicateFeaturePairs = fps1 ++ fps2}
+        MutatePredicateFeaturePair -> do
+          fn <- generateRandomMax (featureNamesSize p)
+          fv <- generateRandomMax (featureValuesSize p)
+          return $ pr {predicateFeaturePairs = fps1 ++ (fn, Just fv) : fps2}
+        AddPredicateFeaturePair -> do
+          fn <- generateRandomMax (featureNamesSize p)
+          fv <- generateRandomMax (featureValuesSize p)
+          return $ pr {predicateFeaturePairs = (fn, Just fv) : predicateFeaturePairs pr}
+
+mutateRule :: RuleGenerationParams -> Rule -> StatefulRandom Rule
+mutateRule p (FindRoot pr) = do
+  op <- generateRandom
+  case op of
+    ConvertRootToLink -> do
+      cp <- generatePredicate p
+      sd <- generateRandom
+      sdd <- generateRandomMax (maxDistance p)
+      dr <- generateRandomMax (dependencyRelationsSize p)
+      return $ FindLink pr cp sd sdd dr
+    MutateRootPredicate -> do
+      pr' <- mutatePredicate p pr
+      return $ FindRoot pr'
+mutateRule p (FindLink pr cp sd sdd dr) = do
+  op <- generateRandom
+  case op of
+    ConvertLinkToRoot -> return $ FindRoot pr
+    MutateLinkPredicate -> do
+      pr' <- mutatePredicate p pr
+      return $ FindLink pr' cp sd sdd dr
+    MutateCorrespondentPredicate -> do
+      cp' <- mutatePredicate p cp
+      return $ FindLink pr cp' sd sdd dr
+    MutateSearchDirection -> do
+      sd' <- generateRandom
+      return $ FindLink pr cp sd' sdd dr
+    MutateSearchDistance -> do
+      sdd' <- generateRandomMax (maxDistance p)
+      return $ FindLink pr cp sd sdd' dr
+    MutateDependencyRelation -> do
+      dr' <- generateRandomMax (dependencyRelationsSize p)
+      return $ FindLink pr cp sd sdd dr'
+
+mutateRuleSet :: RuleGenerationParams -> RuleSet -> StatefulRandom RuleSet
+mutateRuleSet p (RuleSet rs) = do
+  op <- generateRandom
+  n <- generateRandomMax $ length rs - 1
+  go p op n rs
   where
-    (xs, g') = uniformList n g
-
-int2Rule :: RuleGenerationParams -> Int -> Rule
-int2Rule p n =
-  if rv == 0
-    then FindRoot (int2ExactPredicate p ep)
-    else FindLink (int2ExactPredicate p ep) (int2CorrespondentPredicate p cp) dr
-  where
-    (_, [rv, ep, cp, dr]) = generateMods n [2, m, m, dependencyRelationsSize p]
-    m = maxPredicateVariant p
-
-maxPredicateVariant :: RuleGenerationParams -> Int
-maxPredicateVariant p =
-  (tagsSize p)
-    * (((featureNamesSize p) * (featureNamesSize p)) ^ (maxFeaturePairs p))
-    * (maxDistance p)
-
-int2ExactPredicate :: RuleGenerationParams -> Int -> ExactPredicate
-int2ExactPredicate p n = ExactPredicate t ps
-  where
-    (n1, t) = n `divMod` (tagsSize p)
-    ps = int2Featurepairs p n1
-
-int2CorrespondentPredicate :: RuleGenerationParams -> Int -> CorrespondentPredicate
-int2CorrespondentPredicate p n = CorrespondentPredicate (sd sdd) t (map (fmap Just) ps)
-  where
-    (n1, [t, sdi, sdd]) = generateMods n [dependencyRelationsSize p, 2, maxDistance p]
-    sd =
-      if sdi == 0
-        then SearchLeft
-        else SearchRight
-    ps = int2Featurepairs p n1
-
-int2Featurepairs :: RuleGenerationParams -> Int -> [(Int, Int)]
-int2Featurepairs p n = zip (nub fns) fvs
-  where
-    (n1, size) = n `divMod` (maxFeaturePairs p)
-    (n2, fns) = generateMods n1 $ replicate size (featureNamesSize p)
-    (_, fvs) = generateMods n2 $ replicate size (featureValuesSize p)
-
-generateMods :: Int -> [Int] -> (Int, [Int])
-generateMods n xs = foldr (\x (n', acc) -> (n' `div` x, (n' `mod` x) : acc)) (n, []) xs
-
-mutateRule :: RuleGenerationParams -> Rule -> Int -> Rule
-mutateRule p r n =
-  case r of
-    (FindRoot ep@(ExactPredicate t fps)) ->
-      case toEnum (op `mod` 6) of
-        Convert -> FindLink ep (int2CorrespondentPredicate p n'') dr'
-        MutateExactTag -> FindRoot (ExactPredicate t' fps)
-        DeleteExactFeaturePair -> FindRoot (ExactPredicate t (fps1 ++ fps2))
-        AddExactFeaturePair -> FindRoot (ExactPredicate t (fps1 ++ (fn, fv) : fp : fps2))
-        MutateExactFeaturePair -> FindRoot (ExactPredicate t (fps1 ++ (fn, fv) : fps2))
-        _ -> error "Cannot mutate"
+    go p op n rs = do
+      case op of
+        DeleteRule -> return $ RuleSet (rs1 ++ rs2)
+        InsertRule -> do
+          newRule <- generateRule p
+          return $ RuleSet (rs1 ++ newRule : rs2)
+        MutateRule -> do
+          mutatedRule <- mutateRule p r
+          return $ RuleSet (rs1 ++ mutatedRule : rs2)
       where
-        (fps1, fp:fps2) = splitAt i fps
-        (n'', i) = n' `divMod` (length fps)
-    (FindLink ep@(ExactPredicate t fps) cp@(CorrespondentPredicate sd t2 fpsc) dr) ->
-      case toEnum op of
-        Convert -> FindRoot ep
-        MutateExactTag -> FindLink (ExactPredicate t' fps) cp dr
-        DeleteExactFeaturePair -> FindLink (ExactPredicate t (fps1 ++ fps2)) cp dr
-        AddExactFeaturePair -> FindLink (ExactPredicate t (fps1 ++ (fn, fv) : fp : fps2)) cp dr
-        MutateExactFeaturePair -> FindLink (ExactPredicate t (fps1 ++ (fn, fv) : fps2)) cp dr
-        MutateCorrespondentTag -> FindLink ep (CorrespondentPredicate sd t' fpsc) dr
-        DeleteCorrespondentFeaturePair ->
-          FindLink ep (CorrespondentPredicate sd t2 (fps21 ++ fps22)) dr
-        MutateCorrespondentFeaturePair ->
-          FindLink ep (CorrespondentPredicate sd t2 (fps21 ++ (fn, Just fv) : fps22)) dr
-        MutateCorrespondentFeaturePairSetValueNothing ->
-          FindLink ep (CorrespondentPredicate sd t2 (fps21 ++ (fn, Nothing) : fps22)) dr
-        MutateCorrespondentFeaturePairWithValue ->
-          FindLink ep (CorrespondentPredicate sd t2 (fps21 ++ (fn2, Just fv) : fps22)) dr
-        MutateCorrespondentFeaturePairWithValueNothing ->
-          FindLink ep (CorrespondentPredicate sd t2 (fps21 ++ (fn2, Nothing) : fps22)) dr
-        MutateCorrespondentSearchDirection ->
-          FindLink
-            ep
-            (CorrespondentPredicate
-               (if sd' == 0
-                  then SearchLeft sdd
-                  else SearchRight sdd)
-               t2
-               fpsc)
-            dr
-        MutateCorrespondentDependencyRelation -> FindLink ep (CorrespondentPredicate sd t2 fpsc) dr'
-      where
-        (fps1, fp:fps2) = splitAt i fps
-        (fps21, (fn2, _):fps22) = splitAt i fpsc
-        (n'', i) = n' `divMod` (length fps)
-  where
-    (n', [op, t', dr', fn, fv, sd', sdd]) =
-      generateMods
-        n
-        [ 1 + fromEnum (maxBound :: MutationRule)
-        , tagsSize p
-        , dependencyRelationsSize p
-        , featureNamesSize p
-        , featureValuesSize p
-        , 2
-        , maxDistance p
-        ]
+        (rs1, r:rs2) = splitAt n rs
 
-mutateRuleSet :: RandomGen g => RuleGenerationParams -> g -> RuleSet -> (RuleSet, g)
-mutateRuleSet p g (RuleSet rs) =
-  ( case toEnum op of
-      DeleteRule -> RuleSet (rs1 ++ rs2)
-      InsertRule -> RuleSet (rs1 ++ int2Rule p n' : r : rs2)
-      MutateRule -> RuleSet (rs1 ++ mutateRule p r n' : rs2)
-  , g')
-  where
-    (n, g') = uniform g
-    (n', [op, i]) = generateMods n [1 + fromEnum (maxBound :: MutationRuleSet), (length rs - 1)]
-    (rs1, r:rs2) = splitAt i rs
-
-crossover2RuleSets :: RandomGen g => g -> RuleSet -> RuleSet -> (RuleSet, g)
-crossover2RuleSets g (RuleSet rs1) (RuleSet rs2) = (RuleSet $ take n' rs1 ++ drop n' rs2, g')
-  where
-    (n, g') = uniform g
-    n' = n `mod` (min (length rs1) (length rs2))
+crossover2RuleSets :: RuleSet -> RuleSet -> StatefulRandom RuleSet
+crossover2RuleSets (RuleSet rs1) (RuleSet rs2) = do
+  n <- generateRandomMax (min (length rs1) (length rs2))
+  return $ RuleSet $ take n rs1 ++ drop n rs2

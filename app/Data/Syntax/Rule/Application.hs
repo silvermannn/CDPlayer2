@@ -6,21 +6,17 @@ import Data.Syntax.Rule
 import Data.Syntax.Sentence
 import Data.Syntax.Tag
 
-exactFilter (ExactPredicate tagId fs) (SWord _ _ tagId' fs') =
-  tagId == tagId' && and (map (`elem` fs') fs)
-
-correspondentFilter (CorrespondentPredicate _ tagId _) (SWord _ _ _ _) (SWord _ _ tagId2 _) =
-  tagId == tagId2
+predicateFilter (Predicate tagId fs) _ (SWord _ _ tagId' fs') = tagId == tagId'
 
 applyRule :: Rule -> Result -> [Result]
 applyRule (FindRoot ep) (Result (DependencyTree Nothing) s) =
   [ Result (DependencyTree $ Just $ DependencyTreeNode t getRootRelation []) (removeUsed t s)
-  | t <- filterBy (exactFilter ep) s
+  | t <- filterBy (predicateFilter ep Nothing) s
   ]
-applyRule (FindLink ep cp r) (Result (DependencyTree (Just dt)) s) =
+applyRule (FindLink ep cp _ _ r) (Result (DependencyTree (Just dt)) s) =
   [ Result (DependencyTree $ Just $ cont (insertNode t r)) (removeUsed t s)
-  | (cont, t') <- searchAndModifyNode (exactFilter ep) dt
-  , t <- filterBy (correspondentFilter cp t') s
+  | (cont, t') <- searchAndModifyNode (predicateFilter ep Nothing) dt
+  , t <- filterBy (predicateFilter cp (Just t')) s
   ]
 applyRule _ _ = []
 
