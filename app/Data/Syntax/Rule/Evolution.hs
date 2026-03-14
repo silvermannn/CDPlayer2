@@ -28,9 +28,7 @@ newtype Population =
 generateInitialPopulation :: EvolutionParameters -> StatefulRandom Population
 generateInitialPopulation p =
   Population
-    <$> replicateM
-          (maxPopulationSize p)
-          (generateRuleSet (generationParams p) (maxRulesetSize p))
+    <$> replicateM (maxPopulationSize p) (generateRuleSet (generationParams p) (maxRulesetSize p))
 
 makeMutations :: EvolutionParameters -> Population -> StatefulRandom Population
 makeMutations p (Population rs) = do
@@ -56,25 +54,16 @@ makeCrossovers p (Population rs) = do
     m = maxPopulationSize p - length rs
 
 cutPopulation ::
-     EvolutionParameters
-  -> Population
-  -> DependencyTree
-  -> Sentence
-  -> StatefulRandom Population
+     EvolutionParameters -> Population -> DependencyTree -> Sentence -> StatefulRandom Population
 cutPopulation p (Population rs) dt s = return $ Population survived
   where
     ress = map (`parseSentence` s) rs
     scores = zipWith (evaluateResults dt) ress rs
-    survived =
-      take survivedN $ map fst $ sortBy (compare `on` snd) $ zip rs scores
+    survived = take survivedN $ map fst $ sortBy (compare `on` snd) $ zip rs scores
     survivedN = ceiling (fromIntegral (length rs) * survivalRate p)
 
 evolutionStep ::
-     EvolutionParameters
-  -> DependencyTree
-  -> Sentence
-  -> Population
-  -> StatefulRandom Population
+     EvolutionParameters -> DependencyTree -> Sentence -> Population -> StatefulRandom Population
 evolutionStep p dt s ps = do
   survived <- cutPopulation p ps dt s
   crossed <- makeCrossovers p survived
@@ -82,9 +71,5 @@ evolutionStep p dt s ps = do
   return mutated
 
 infiniteEvolution ::
-     EvolutionParameters
-  -> DependencyTree
-  -> Sentence
-  -> Population
-  -> StatefulRandom [Population]
+     EvolutionParameters -> DependencyTree -> Sentence -> Population -> StatefulRandom [Population]
 infiniteEvolution p dt s ps = iterateM (evolutionStep p dt s) ps

@@ -15,8 +15,12 @@ import Data.Syntax.Rule.Evolution
 import Data.Syntax.Rule.Random
 import Data.Syntax.Sentence
 import Data.Syntax.Tag
+import Data.Tree
+import Data.TreeSearch
 
-testWords = [SWord i i i [] | i <- [0 .. 19]]
+testTree = Node 1 [Node 2 [], Node 3 [Node 4 [], Node 1 [Node 11 []], Node 10 []]]
+
+testWords = [SWord i i i [] | i <- [0 .. 9]]
 
 testSentence = Sentence testWords
 
@@ -29,17 +33,17 @@ testRules = RuleSet [testRule1, testRule2]
 params =
   RuleGenerationParams
     { maxDistance = 10
-    , tagsSize = 20
-    , maxFeaturePairs = 5
-    , featureNamesSize = 10
-    , featureValuesSize = 10
+    , tagsSize = 10
+    , maxFeaturePairs = 1
+    , featureNamesSize = 1
+    , featureValuesSize = 1
     , dependencyRelationsSize = 10
     }
 
 evolParams =
   EvolutionParameters
     { maxPopulationSize = 100
-    , maxRulesetSize = 30
+    , maxRulesetSize = 15
     , mutationRate = 0.1
     , survivalRate = 0.5
     , generationParams = params
@@ -49,7 +53,6 @@ main :: IO ()
 main = do
   print testSentence
   print evolParams
-  
   print "best rule 1"
   mapM_ print rs2
   showDependencyTree $ last $ map (\(Result a _) -> a) $ parseSentence (RuleSet rs2) testSentence
@@ -66,6 +69,7 @@ main = do
     (Population rss2) = ps2
     (RuleSet rs2) = head rss2
     (evol, g3) = runState (infiniteEvolution evolParams emptyDependencyTree testSentence ps2) g2
-    ps3 = last $ take 55555 evol
+    ps3 = last $ take 15 evol
     (Population rss3) = ps3
     (RuleSet rs3) = head rss3
+

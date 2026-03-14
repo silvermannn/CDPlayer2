@@ -1,5 +1,8 @@
 module Data.Syntax.Rule.Application where
 
+import Data.Tree
+import Data.TreeSearch
+
 import Data.Syntax.DependencyRelation
 import Data.Syntax.DependencyTree
 import Data.Syntax.Rule
@@ -10,12 +13,12 @@ predicateFilter (Predicate tagId fs) _ (SWord _ _ tagId' fs') = tagId == tagId'
 
 applyRule :: Rule -> Result -> [Result]
 applyRule (FindRoot ep) (Result (DependencyTree Nothing) s) =
-  [ Result (DependencyTree $ Just $ DependencyTreeNode t getRootRelation []) (removeUsed t s)
+  [ Result (DependencyTree $ Just $ Node (t, getRootRelation) []) (removeUsed t s)
   | t <- filterBy (predicateFilter ep Nothing) s
   ]
 applyRule (FindLink ep cp _ _ r) (Result (DependencyTree (Just dt)) s) =
-  [ Result (DependencyTree $ Just $ cont (insertNode t r)) (removeUsed t s)
-  | (cont, t') <- searchAndModifyNode (predicateFilter ep Nothing) dt
+  [ Result (DependencyTree $ Just $ modify (insertNode (t, r)) path dt) (removeUsed t s)
+  | (path, t') <- search (predicateFilter ep Nothing . fst) dt
   , t <- filterBy (predicateFilter cp (Just t')) s
   ]
 applyRule _ _ = []

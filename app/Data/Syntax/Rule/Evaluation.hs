@@ -20,7 +20,7 @@ evaluateResult :: DependencyTree -> Result -> Int
 evaluateResult target (Result dt (Sentence s)) =
   calcDependancyTreeDifference target dt * penaltyForDependencyTree + length s * penaltyForSentence
 
-evaluateResults ::  DependencyTree -> [Result] -> RuleSet-> Int
+evaluateResults :: DependencyTree -> [Result] -> RuleSet -> Int
 evaluateResults target results rs = minimum $ map (evaluateResult' rs target) results
   where
     evaluateResult' rs target result = evaluateRulesAlone rs + evaluateResult target result

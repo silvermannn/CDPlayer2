@@ -1,8 +1,10 @@
 module Data.Syntax.DependencyTree where
 
+import Data.Bifunctor
 import Data.Maybe
 import Data.Tree
 
+import Data.TreeSearch
 import Data.Syntax.DependencyRelation
 import Data.Syntax.Tag
 
@@ -10,23 +12,15 @@ newtype DependencyTree =
   DependencyTree (Maybe DependencyTreeNode)
   deriving (Show)
 
-data DependencyTreeNode = DependencyTreeNode
-  { node :: TaggedWord
-  , relation :: DependencyRelation
-  , children :: [DependencyTreeNode]
-  } deriving (Show)
+type NodeInfo = (TaggedWord, DependencyRelation)
+
+type DependencyTreeNode = Tree NodeInfo
 
 emptyDependencyTree :: DependencyTree
 emptyDependencyTree = DependencyTree Nothing
 
-nodeToTree :: DependencyTreeNode -> Tree String
-nodeToTree (DependencyTreeNode n r chs) = Node (show (r, n)) $ map nodeToTree chs
-
-showDependencyTreeNode :: DependencyTreeNode -> IO ()
-showDependencyTreeNode dt = putStrLn $ drawTree $ nodeToTree dt
-
 dependencyTreeToTree :: DependencyTree -> Tree String
-dependencyTreeToTree (DependencyTree mch) = Node "<root>" $ maybe [] (pure . nodeToTree) mch
+dependencyTreeToTree (DependencyTree mch) = Node "<root>" $ maybe [] (pure . fmap show) mch
 
 showDependencyTree :: DependencyTree -> IO ()
 showDependencyTree dt = putStrLn $ drawTree $ dependencyTreeToTree dt
@@ -36,24 +30,29 @@ splits [] = []
 splits (a:as) = scanl (\(xs, x, y:ys) _ -> (x : xs, y, ys)) ([], a, as) as
 
 searchAndModifyNode ::
-     (TaggedWord -> Bool)
+     (NodeInfo -> Bool)
   -> DependencyTreeNode
-  -> [((DependencyTreeNode -> DependencyTreeNode) -> DependencyTreeNode, TaggedWord)]
-searchAndModifyNode p dt@(DependencyTreeNode n r chs) =
-  [(\m -> m dt, node dt) | p n]
-    ++ [ (\m -> DependencyTreeNode n r (pchs ++ (cont m : achs)), t')
+  -> [((DependencyTreeNode -> DependencyTreeNode) -> DependencyTreeNode, NodeInfo)]
+searchAndModifyNode p dt@(Node ni chs) =
+  [(\m -> m dt, rootLabel dt) | p ni]
+    ++ [ (\m -> Node ni (pchs ++ (cont m : achs)), t')
        | (pchs, ch, achs) <- splits chs
        , (cont, t') <- searchAndModifyNode p ch
        ]
 
 searchAndModifyTree ::
-     (TaggedWord -> Bool)
+     (NodeInfo -> Bool)
   -> DependencyTree
-  -> [((DependencyTreeNode -> DependencyTreeNode) -> DependencyTreeNode, TaggedWord)]
+  -> [((DependencyTreeNode -> DependencyTreeNode) -> DependencyTreeNode, NodeInfo)]
 searchAndModifyTree p (DependencyTree mch) = maybe [] (searchAndModifyNode p) mch
 
-insertNode :: TaggedWord -> DependencyRelation -> DependencyTreeNode -> DependencyTreeNode
-insertNode t r dt = dt {children = DependencyTreeNode t r [] : children dt}
+searchTree :: (NodeInfo -> Bool) -> DependencyTree -> [(TreePath, NodeInfo)]
+searchTree p (DependencyTree mn) = maybe [] (search p) mn
+
+modifyTree ::
+     DependencyTree -> (DependencyTreeNode -> DependencyTreeNode) -> TreePath -> DependencyTree
+modifyTree dt@(DependencyTree mn) f path =
+  maybe dt (DependencyTree . Just . modify f path) mn
 
 calcDependancyTreeDifference :: DependencyTree -> DependencyTree -> Int
 calcDependancyTreeDifference dt1 dt2 = 0
