@@ -16,6 +16,7 @@ import Data.Syntax.Rule
 import Data.Syntax.Rule.Application
 import Data.Syntax.Rule.Evolution
 import Data.Syntax.Rule.Random
+import Data.Syntax.Rule.Predicate
 import Data.Syntax.Sentence
 import Data.Syntax.Tag
 import Data.Tree
@@ -52,28 +53,40 @@ evolParams =
     , generationParams = params
     }
 
+ps = [10, 20, 30]
+
+testLT1 :: LinearTree Int Int
+testLT1 = singletonLT 10 1
+
+testLT2 = insertLT 4 1 20 $ insertLT 3 0 20 $ insertLT 2 0 10 testLT1
+
+testTrees = toTreeLT testLT2
+
 main :: IO ()
 main = do
+  print testLT2
+  mapM_ print $ map (`cachedItemsLT` testLT2) ps
+  mapM_ (putStrLn . drawTree) testTrees 
+
   print testSentence
   print evolParams
   print "best rule 1"
   mapM_ print rs2
-  mapM_ print $ M.toList c
   showDependencyTree a
   print "best rule 2"
   print (rss2 == rss3)
   print (rs2 == rs3)
   mapM_ print rs3
-  showDependencyTree $ ($) (\(Result a _ _) -> a) $ last $ parseSentence (RuleSet rs3) testSentence
+  showDependencyTree $ ($) (\(Result a _) -> a) $ last $ parseSentence (RuleSet rs3) testSentence
   print ":DONE!"
   where
-    (Result a _ c) = last $ parseSentence (RuleSet rs2) testSentence
+    (Result a _) = last $ parseSentence (RuleSet rs2) testSentence
     g = mkStdGen 31337
     (ps1, g1) = runState (generateInitialPopulation evolParams) g
     (ps2, g2) = runState (evolutionStep evolParams emptyDependencyTree testSentence ps1) g1
     (Population rss2) = ps2
     (RuleSet rs2) = head rss2
     (evol, g3) = runState (infiniteEvolution evolParams emptyDependencyTree testSentence ps2) g2
-    ps3 = last $ take 15 evol
+    ps3 = last $ take 5 evol
     (Population rss3) = ps3
     (RuleSet rs3) = head rss3

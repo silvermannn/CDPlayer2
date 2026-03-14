@@ -10,6 +10,7 @@ import GHC.Generics
 
 import Data.Random.Stateful
 import Data.Syntax.Rule
+import Data.Syntax.Rule.Predicate
 
 data RuleGenerationParams = RuleGenerationParams
   { maxDistance :: Int
