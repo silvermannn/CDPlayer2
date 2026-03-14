@@ -7,9 +7,14 @@ type TreePath = [Int]
 showTree :: Show a => Tree a -> IO ()
 showTree t = putStrLn $ drawTree $ fmap show t
 
-search :: (a -> Bool) -> Tree a -> [(TreePath, a)]
+search :: (a -> Bool) -> Tree a -> [(TreePath, a, [Tree a])]
 search f (Node a chs) =
-  [([], a) | f a] ++ [(j : path, tw) | (j, ch) <- zip [0 ..] chs, (path, tw) <- search f ch]
+  m [(j : path, tw, chs') | (j, ch) <- zip [0 ..] chs, (path, tw, chs') <- search f ch]
+  where
+    m =
+      if f a
+        then (([], a, chs) :)
+        else id
 
 modify :: (Tree a -> Tree a) -> TreePath -> Tree a -> Tree a
 modify f [] n = f n
@@ -23,9 +28,11 @@ modify f (i:is) n@(Node _ sf) =
         ]
     }
 
-insertNode :: a -> Tree a -> Tree a
-insertNode ni n@(Node _ sf)  = n {subForest = Node ni [] : sf}
+lookupNode :: TreePath -> Tree a -> (a, [Tree a])
+lookupNode [] (Node a ch) = (a, ch)
 
+insertNode :: a -> Tree a -> Tree a
+insertNode ni n@(Node _ sf) = n {subForest = sf ++ [Node ni []]}
 {-
 testTree =
   Node

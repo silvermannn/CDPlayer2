@@ -7,6 +7,9 @@ import System.Random
 import Control.Monad
 import Control.Monad.State
 
+import Data.Bifunctor
+import qualified Data.Map as M
+
 import Data.Syntax.DependencyRelation
 import Data.Syntax.DependencyTree
 import Data.Syntax.Rule
@@ -34,7 +37,7 @@ params =
   RuleGenerationParams
     { maxDistance = 10
     , tagsSize = 10
-    , maxFeaturePairs = 1
+    , maxFeaturePairs = 0
     , featureNamesSize = 1
     , featureValuesSize = 1
     , dependencyRelationsSize = 10
@@ -55,14 +58,16 @@ main = do
   print evolParams
   print "best rule 1"
   mapM_ print rs2
-  showDependencyTree $ last $ map (\(Result a _) -> a) $ parseSentence (RuleSet rs2) testSentence
+  mapM_ print $ M.toList c
+  showDependencyTree a
   print "best rule 2"
   print (rss2 == rss3)
   print (rs2 == rs3)
   mapM_ print rs3
-  showDependencyTree $ last $ map (\(Result a _) -> a) $ parseSentence (RuleSet rs3) testSentence
+  showDependencyTree $ ($) (\(Result a _ _) -> a) $ last $ parseSentence (RuleSet rs3) testSentence
   print ":DONE!"
   where
+    (Result a _ c) = last $ parseSentence (RuleSet rs2) testSentence
     g = mkStdGen 31337
     (ps1, g1) = runState (generateInitialPopulation evolParams) g
     (ps2, g2) = runState (evolutionStep evolParams emptyDependencyTree testSentence ps1) g1
@@ -72,4 +77,3 @@ main = do
     ps3 = last $ take 15 evol
     (Population rss3) = ps3
     (RuleSet rs3) = head rss3
-

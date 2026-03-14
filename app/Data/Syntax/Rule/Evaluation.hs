@@ -2,6 +2,7 @@ module Data.Syntax.Rule.Evaluation where
 
 import Data.Syntax.DependencyTree
 import Data.Syntax.Rule
+import Data.Syntax.Rule.Application
 import Data.Syntax.Sentence
 
 penaltyForRule :: Int
@@ -17,7 +18,7 @@ evaluateRulesAlone :: RuleSet -> Int
 evaluateRulesAlone (RuleSet rs) = length rs * penaltyForRule
 
 evaluateResult :: DependencyTree -> Result -> Int
-evaluateResult target (Result dt (Sentence s)) =
+evaluateResult target (Result dt (Sentence s) _) =
   calcDependancyTreeDifference target dt * penaltyForDependencyTree + length s * penaltyForSentence
 
 evaluateResults :: DependencyTree -> [Result] -> RuleSet -> Int
