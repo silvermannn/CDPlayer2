@@ -13,8 +13,6 @@ data Result =
   Result DependencyTree Sentence
   deriving (Show)
 
-predicateFilter (Predicate tagId fs) _ (SWord _ _ tagId' fs') = tagId == tagId'
-
 applyRule :: Rule -> Result -> [Result]
 applyRule _ (Result _ (Sentence [])) = []
 applyRule (FindRoot ep) (Result (DependencyTree Nothing) s) =
