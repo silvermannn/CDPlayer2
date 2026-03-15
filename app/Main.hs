@@ -8,6 +8,7 @@ import Control.Monad.State
 
 import Data.List
 
+import Data.Syntax.DependencyRelation
 import Data.Syntax.DependencyTree
 import Data.Syntax.Rule
 import Data.Syntax.Rule.Application
@@ -15,9 +16,18 @@ import Data.Syntax.Rule.Evolution
 import Data.Syntax.Rule.Random
 import Data.Syntax.Sentence
 import Data.Syntax.Tag
+import Data.TreeSearch
 
 testWords :: [TaggedWord]
-testWords = [SWord i i i [(0, 0)] | i <- [0 .. 9]]
+testWords = [SWord i i i [(0, 0)] | i <- [1 .. 9]]
+
+testTree =
+  DependencyTree
+    $ Just
+    $ foldr
+        (\w t -> insertLT (w, 1) 0 t)
+        (singletonLT (SWord 0 0 0 [(0, 0)], getRootRelation))
+        testWords
 
 testSentence :: Sentence
 testSentence = Sentence testWords
@@ -46,6 +56,7 @@ evolParams =
 main :: IO ()
 main = do
   print testSentence
+  showDependencyTree testTree
   print evolParams
   print "best rule 1"
   mapM_ print $ sort rs2
@@ -58,8 +69,8 @@ main = do
     (Result a _) = last $ parseSentence (RuleSet rs2) testSentence
     g = mkStdGen 31337
     (ps1, g1) = runState (generateInitialPopulation evolParams) g
-    (ps2, g2) = runState (evolutionStep evolParams emptyDependencyTree testSentence ps1) g1
+    (ps2, g2) = runState (evolutionStep evolParams testTree testSentence ps1) g1
     (Population ((RuleSet rs2):_)) = ps2
-    (evol, _) = runState (infiniteEvolution evolParams emptyDependencyTree testSentence ps2) g2
+    (evol, _) = runState (infiniteEvolution evolParams testTree testSentence ps2) g2
     ps3 = last $ take 100 evol
     (Population ((RuleSet rs3):_)) = ps3

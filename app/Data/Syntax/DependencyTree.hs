@@ -24,4 +24,8 @@ showDependencyTree :: DependencyTree -> IO ()
 showDependencyTree dt = putStrLn $ drawTree $ dependencyTreeToTree dt
 
 calcDependancyTreeDifference :: DependencyTree -> DependencyTree -> Int
-calcDependancyTreeDifference _ _ = 0
+calcDependancyTreeDifference (DependencyTree Nothing) (DependencyTree Nothing) = 0
+calcDependancyTreeDifference (DependencyTree Nothing) (DependencyTree (Just dt)) = sizeLT dt
+calcDependancyTreeDifference (DependencyTree (Just dt)) (DependencyTree Nothing) = sizeLT dt
+calcDependancyTreeDifference (DependencyTree (Just dt1)) (DependencyTree (Just dt2)) =
+  differenceLT dt1 dt2

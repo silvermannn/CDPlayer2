@@ -1,6 +1,6 @@
 module Data.TreeSearch where
 
-import qualified Data.IntMap as I
+import qualified Data.IntMap.Strict as I
 
 import Data.Maybe
 import Data.Tree
@@ -33,3 +33,9 @@ toTreeLT (FastTree m (l, _) _) = toTreeLT' (-1)
       if a == l
         then show a ++ " <<--"
         else show a
+
+differenceLT :: FastTree a -> FastTree a -> Int
+differenceLT (FastTree is1 _ c1) (FastTree is2 _ c2) = I.size (I.intersection is1 is2)
+
+sizeLT :: FastTree a -> Int
+sizeLT (FastTree _ _ c) = c

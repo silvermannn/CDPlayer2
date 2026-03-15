@@ -67,9 +67,8 @@ evolutionStep ::
 evolutionStep p dt s ps = do
   survived <- cutPopulation p ps dt s
   crossed <- makeCrossovers p survived
-  mutated <- makeMutations p crossed
-  return mutated
+  makeMutations p crossed
 
 infiniteEvolution ::
      EvolutionParameters -> DependencyTree -> Sentence -> Population -> StatefulRandom [Population]
-infiniteEvolution p dt s ps = iterateM (evolutionStep p dt s) ps
+infiniteEvolution p dt s = iterateM (evolutionStep p dt s)

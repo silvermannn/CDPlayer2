@@ -6,13 +6,13 @@ import Data.Syntax.Rule.Application
 import Data.Syntax.Sentence
 
 penaltyForRule :: Int
-penaltyForRule = 1
+penaltyForRule = 5
 
 penaltyForDependencyTree :: Int
 penaltyForDependencyTree = 10
 
 penaltyForSentence :: Int
-penaltyForSentence = 100
+penaltyForSentence = 20
 
 evaluateRulesAlone :: RuleSet -> Int
 evaluateRulesAlone (RuleSet rs) = length rs * penaltyForRule
