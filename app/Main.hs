@@ -30,7 +30,7 @@ testTree =
         testWords
 
 testSentence :: Sentence
-testSentence = Sentence testWords
+testSentence = newSentence testWords
 
 params :: RuleGenerationParams
 params =

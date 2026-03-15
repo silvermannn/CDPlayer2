@@ -13,7 +13,6 @@ data Result =
   deriving (Show)
 
 applyRule :: Rule -> Result -> [Result]
-applyRule _ (Result _ (Sentence [])) = []
 applyRule (FindRoot ep) (Result (DependencyTree Nothing) s) =
   [ Result (DependencyTree $ Just $ singletonLT (t, getRootRelation)) (removeUsed t s)
   | t <- filterBy (predicateFilter ep Nothing) s
@@ -30,7 +29,7 @@ applyRules :: RuleSet -> Result -> [Result]
 applyRules (RuleSet rs) r = concatMap (`applyRule` r) rs
 
 isFinalResult :: Result -> Bool
-isFinalResult (Result _ (Sentence tws)) = null tws
+isFinalResult (Result _ s) = isEmptySentence s
 
 cyclicApplication :: RuleSet -> Result -> [Result]
 cyclicApplication rs start =

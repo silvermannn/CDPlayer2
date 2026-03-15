@@ -1,13 +1,20 @@
 module Data.Syntax.Sentence where
 
+import qualified Data.IntMap as I
 import Data.Syntax.Tag
 
-newtype Sentence =
-  Sentence [TaggedWord]
-  deriving (Show)
+type Sentence = I.IntMap TaggedWord
 
 filterBy :: (TaggedWord -> Bool) -> Sentence -> [TaggedWord]
-filterBy p (Sentence ws) = filter p ws
+filterBy p m = I.elems $ I.filter p m
 
 removeUsed :: TaggedWord -> Sentence -> Sentence
-removeUsed tw (Sentence tws) = Sentence $ filter ((/= index tw) . index) tws
+removeUsed tw m = I.delete (index tw) m
+
+sentenceSize s = I.size s
+
+isEmptySentence :: Sentence -> Bool
+isEmptySentence m = I.null m
+
+newSentence :: [TaggedWord] -> Sentence
+newSentence = I.fromList . map (\t@(SWord i _ _ _) -> (i, t))

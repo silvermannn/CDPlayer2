@@ -18,8 +18,9 @@ evaluateRulesAlone :: RuleSet -> Int
 evaluateRulesAlone (RuleSet rs) = length rs * penaltyForRule
 
 evaluateResult :: DependencyTree -> Result -> Int
-evaluateResult target (Result dt (Sentence s)) =
-  calcDependancyTreeDifference target dt * penaltyForDependencyTree + length s * penaltyForSentence
+evaluateResult target (Result dt s) =
+  calcDependancyTreeDifference target dt * penaltyForDependencyTree
+    + sentenceSize s * penaltyForSentence
 
 evaluateResults :: DependencyTree -> [Result] -> RuleSet -> Int
 evaluateResults target results rs = minimum $ map evaluateResult' results
