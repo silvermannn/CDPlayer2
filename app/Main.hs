@@ -7,7 +7,7 @@ import System.Random
 import Control.Monad
 import Control.Monad.State
 
-import Data.Bifunctor
+import Data.List
 import qualified Data.Map as M
 
 import Data.Syntax.DependencyRelation
@@ -21,8 +21,6 @@ import Data.Syntax.Sentence
 import Data.Syntax.Tag
 import Data.Tree
 import Data.TreeSearch
-
-testTree = Node 1 [Node 2 [], Node 3 [Node 4 [], Node 1 [Node 11 []], Node 10 []]]
 
 testWords = [SWord i i i [] | i <- [0 .. 9]]
 
@@ -53,24 +51,23 @@ evolParams =
     , generationParams = params
     }
 
-ps = [10, 20, 30]
+testLT1 :: FastTree String
+testLT1 = singletonLT "item 1"
 
-testLT1 :: LinearTree Int Int
-testLT1 = singletonLT 10 1
-
-testLT2 = insertLT 4 1 20 $ insertLT 3 0 20 $ insertLT 2 0 10 testLT1
+testLT2 = insertLT "item 4" 1 $ insertLT "item 3" 0 $ insertLT "item 2" 0 testLT1
 
 testTrees = toTreeLT testLT2
 
 main :: IO ()
 main = do
   print testLT2
-  mapM_ print $ map (`cachedItemsLT` testLT2) ps
+  print $ lastAddedLT testLT2
   mapM_ (putStrLn . drawTree) testTrees
   print testSentence
   print evolParams
   print "best rule 1"
-  mapM_ print rs2
+  mapM_ print $ sort rs2
+  print a
   showDependencyTree a
   print "best rule 2"
   print (rss2 == rss3)

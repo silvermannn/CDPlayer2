@@ -5,4 +5,4 @@ data TaggedWord = SWord
   , wordId :: Int
   , tagId :: Int
   , features :: [(Int, Int)]
-  } deriving (Show)
+  } deriving (Show, Eq, Ord)

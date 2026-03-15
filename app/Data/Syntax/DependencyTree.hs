@@ -4,7 +4,6 @@ import Data.Maybe
 import Data.Tree
 
 import Data.Syntax.DependencyRelation
-import Data.Syntax.Rule.Predicate
 import Data.Syntax.Tag
 import Data.TreeSearch
 
@@ -14,7 +13,7 @@ newtype DependencyTree =
 
 type NodeInfo = (TaggedWord, DependencyRelation)
 
-type DependencyTreeNode = LinearTree NodeInfo Predicate
+type DependencyTreeNode = FastTree NodeInfo
 
 emptyDependencyTree :: DependencyTree
 emptyDependencyTree = DependencyTree Nothing

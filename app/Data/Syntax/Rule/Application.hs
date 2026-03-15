@@ -18,14 +18,13 @@ predicateFilter (Predicate tagId fs) _ (SWord _ _ tagId' fs') = tagId == tagId'
 applyRule :: Rule -> Result -> [Result]
 applyRule _ (Result _ (Sentence [])) = []
 applyRule (FindRoot ep) (Result (DependencyTree Nothing) s) =
-  [ Result (DependencyTree $ Just $ singletonLT ep (t, getRootRelation)) (removeUsed t s)
+  [ Result (DependencyTree $ Just $ singletonLT (t, getRootRelation)) (removeUsed t s)
   | t <- filterBy (predicateFilter ep Nothing) s
   ]
 applyRule (FindLink ep cp _ _ r) (Result (DependencyTree (Just dt)) s) =
-  [ Result (DependencyTree $ Just $ insertLT (t, r) i ep dt) (removeUsed t s)
-  | let is = cachedItemsLT ep dt
-  , i <- is
-  , let (t', _) = getItemLT dt i
+  [ Result (DependencyTree $ Just $ insertLT (t, r) i dt) (removeUsed t s)
+  | let (t', i) = lastAddedLT dt
+  , predicateFilter ep Nothing $ fst t'
   , t <- filterBy (predicateFilter cp (Just t')) s
   ]
 applyRule _ _ = []

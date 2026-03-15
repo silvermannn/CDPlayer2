@@ -16,12 +16,12 @@ import Data.TreeSearch
 data SearchDirection
   = SearchLeft
   | SearchRight
-  deriving (Show, Eq, Generic, Finite, Uniform)
+  deriving (Show, Eq, Ord, Generic, Finite, Uniform)
 
 data Rule
   = FindRoot Predicate
   | FindLink Predicate Predicate SearchDirection Int DependencyRelation
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
 newtype RuleSet =
   RuleSet [Rule]
