@@ -7,9 +7,11 @@ data Predicate = Predicate
   , predicateFeaturePairs :: [(Int, Maybe Int)]
   } deriving (Show, Eq, Ord)
 
+predicateFilter :: Predicate -> p -> TaggedWord -> Bool
 predicateFilter (Predicate tagId fs) _ (SWord _ _ tagId' fs') =
   tagId == tagId' && and (map (`checkFP` fs') fs)
 
+checkFP :: (Eq a1, Eq a2) => (a1, Maybe a2) -> [(a1, a2)] -> Bool
 checkFP fp fps = any (fit fp) fps
   where
     fit (fn1, Nothing) (fn2, _) = fn1 == fn2

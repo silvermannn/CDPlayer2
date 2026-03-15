@@ -133,9 +133,9 @@ mutateRuleSet :: RuleGenerationParams -> RuleSet -> StatefulRandom RuleSet
 mutateRuleSet p (RuleSet rs) = do
   op <- generateRandom
   n <- generateRandomMax $ length rs - 1
-  go p op n rs
+  go op n
   where
-    go p op n rs = do
+    go op n = do
       case op of
         DeleteRule -> return $ RuleSet $ deleteN n rs
         InsertRule -> do

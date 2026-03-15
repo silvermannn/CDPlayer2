@@ -7,7 +7,6 @@ import Data.Syntax.DependencyTree
 import Data.Syntax.Rule
 import Data.Syntax.Rule.Predicate
 import Data.Syntax.Sentence
-import Data.Syntax.Tag
 
 data Result =
   Result DependencyTree Sentence

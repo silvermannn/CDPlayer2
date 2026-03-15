@@ -1,6 +1,5 @@
 module Data.Syntax.DependencyTree where
 
-import Data.Maybe
 import Data.Tree
 
 import Data.Syntax.DependencyRelation
@@ -25,4 +24,4 @@ showDependencyTree :: DependencyTree -> IO ()
 showDependencyTree dt = putStrLn $ drawTree $ dependencyTreeToTree dt
 
 calcDependancyTreeDifference :: DependencyTree -> DependencyTree -> Int
-calcDependancyTreeDifference dt1 dt2 = 0
+calcDependancyTreeDifference _ _ = 0
