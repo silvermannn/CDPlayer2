@@ -2,9 +2,9 @@ module Data.Syntax.DependencyTree where
 
 import Data.Tree
 
+import Data.FastTree
 import Data.Syntax.DependencyRelation
 import Data.Syntax.Tag
-import Data.TreeSearch
 
 newtype DependencyTree =
   DependencyTree (Maybe DependencyTreeNode)
@@ -23,9 +23,13 @@ dependencyTreeToTree (DependencyTree mch) = Node "<root>" $ maybe [] toTreeLT mc
 showDependencyTree :: DependencyTree -> IO ()
 showDependencyTree dt = putStrLn $ drawTree $ dependencyTreeToTree dt
 
+updateFringe :: DependencyTree -> DependencyTree
+updateFringe (DependencyTree (Just dt)) = DependencyTree $ Just $ updateFringeLT dt
+updateFringe dt = dt
+
 calcDependancyTreeDifference :: DependencyTree -> DependencyTree -> Int
 calcDependancyTreeDifference (DependencyTree Nothing) (DependencyTree Nothing) = 0
-calcDependancyTreeDifference (DependencyTree Nothing) (DependencyTree (Just dt)) = sizeLT dt
-calcDependancyTreeDifference (DependencyTree (Just dt)) (DependencyTree Nothing) = sizeLT dt
+calcDependancyTreeDifference (DependencyTree Nothing) (DependencyTree (Just dt)) = maxBound
+calcDependancyTreeDifference (DependencyTree (Just dt)) (DependencyTree Nothing) = maxBound
 calcDependancyTreeDifference (DependencyTree (Just dt1)) (DependencyTree (Just dt2)) =
   differenceLT dt1 dt2

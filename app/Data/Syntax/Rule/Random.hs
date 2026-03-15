@@ -6,6 +6,8 @@ import Control.Monad
 
 import GHC.Generics
 
+import Data.List
+
 import Data.Common
 import Data.Random.Stateful
 import Data.Syntax.Rule
@@ -50,7 +52,7 @@ data MutationLinkRule
 generateRuleSet :: RuleGenerationParams -> Int -> StatefulRandom RuleSet
 generateRuleSet p size = do
   rs <- replicateM size $ generateRule p
-  return $ RuleSet rs
+  return $ RuleSet $ nub $ sort rs
 
 generateRule :: RuleGenerationParams -> StatefulRandom Rule
 generateRule p = do
@@ -130,10 +132,13 @@ mutateRule p (FindLink pr cp sd sdd dr) = do
       return $ FindLink pr cp sd sdd dr'
 
 mutateRuleSet :: RuleGenerationParams -> RuleSet -> StatefulRandom RuleSet
-mutateRuleSet p (RuleSet rs) = do
-  op <- generateRandom
-  n <- generateRandomMax $ length rs - 1
-  go op n
+mutateRuleSet p (RuleSet rs) =
+  if null rs
+    then return (RuleSet rs)
+    else do
+      op <- generateRandom
+      n <- generateRandomMax $ length rs - 1
+      go op n
   where
     go op n = do
       case op of

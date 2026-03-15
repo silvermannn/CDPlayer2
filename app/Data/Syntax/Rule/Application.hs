@@ -1,7 +1,6 @@
 module Data.Syntax.Rule.Application where
 
-import Data.TreeSearch
-
+import Data.FastTree
 import Data.Syntax.DependencyRelation
 import Data.Syntax.DependencyTree
 import Data.Syntax.Rule
@@ -19,7 +18,7 @@ applyRule (FindRoot ep) (Result (DependencyTree Nothing) s) =
   ]
 applyRule (FindLink ep cp _ _ r) (Result (DependencyTree (Just dt)) s) =
   [ Result (DependencyTree $ Just $ insertLT (t, r) i dt) (removeUsed t s)
-  | let (t', i) = lastAddedLT dt
+  | (t', i) <- fringeLT dt
   , predicateFilter ep Nothing $ fst t'
   , t <- filterBy (predicateFilter cp (Just t')) s
   ]

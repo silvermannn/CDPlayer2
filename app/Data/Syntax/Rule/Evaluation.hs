@@ -6,23 +6,27 @@ import Data.Syntax.Rule.Application
 import Data.Syntax.Sentence
 
 penaltyForRule :: Int
-penaltyForRule = 5
+penaltyForRule = 1
 
 penaltyForDependencyTree :: Int
-penaltyForDependencyTree = 10
+penaltyForDependencyTree = 0
 
 penaltyForSentence :: Int
-penaltyForSentence = 20
+penaltyForSentence = 100
+
+penaltyForResultSize :: Int
+penaltyForResultSize = 2
 
 evaluateRulesAlone :: RuleSet -> Int
 evaluateRulesAlone (RuleSet rs) = length rs * penaltyForRule
 
 evaluateResult :: DependencyTree -> Result -> Int
 evaluateResult target (Result dt s) =
-  calcDependancyTreeDifference target dt * penaltyForDependencyTree
+  calcDependancyTreeDifference target dt `div` 100 * penaltyForDependencyTree
     + sentenceSize s * penaltyForSentence
 
 evaluateResults :: DependencyTree -> [Result] -> RuleSet -> Int
-evaluateResults target results rs = minimum $ map evaluateResult' results
+evaluateResults target results rs =
+  penaltyForResultSize * length results + (minimum $ map evaluateResult' results)
   where
-    evaluateResult' result = evaluateRulesAlone rs + evaluateResult target result
+    evaluateResult' result = evaluateRulesAlone rs + evaluateResult target result `div` 10

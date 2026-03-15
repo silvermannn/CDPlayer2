@@ -8,7 +8,7 @@ data Predicate = Predicate
   } deriving (Show, Eq, Ord)
 
 predicateFilter :: Predicate -> p -> TaggedWord -> Bool
-predicateFilter (Predicate tagId fs) _ (SWord _ _ tagId' fs') =
+predicateFilter (Predicate tagId fs) _ (TaggedWord _ _ tagId' fs') =
   tagId == tagId' && all (`checkFP` fs') fs
 
 checkFP :: (Eq a1, Eq a2) => (a1, Maybe a2) -> [(a1, a2)] -> Bool
