@@ -4,4 +4,3 @@ data Predicate = Predicate
   { predicateTag :: Int
   , predicateFeaturePairs :: [(Int, Maybe Int)]
   } deriving (Show, Eq, Ord)
-

@@ -8,9 +8,9 @@ import System.Random
 
 import Data.Syntax.DependencyRelation
 import Data.Syntax.DependencyTree
+import Data.Syntax.Rule.Predicate
 import Data.Syntax.Sentence
 import Data.Syntax.Tag
-import Data.Syntax.Rule.Predicate
 import Data.TreeSearch
 
 data SearchDirection

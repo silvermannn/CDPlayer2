@@ -15,8 +15,8 @@ import Data.Syntax.DependencyTree
 import Data.Syntax.Rule
 import Data.Syntax.Rule.Application
 import Data.Syntax.Rule.Evolution
-import Data.Syntax.Rule.Random
 import Data.Syntax.Rule.Predicate
+import Data.Syntax.Rule.Random
 import Data.Syntax.Sentence
 import Data.Syntax.Tag
 import Data.Tree
@@ -66,8 +66,7 @@ main :: IO ()
 main = do
   print testLT2
   mapM_ print $ map (`cachedItemsLT` testLT2) ps
-  mapM_ (putStrLn . drawTree) testTrees 
-
+  mapM_ (putStrLn . drawTree) testTrees
   print testSentence
   print evolParams
   print "best rule 1"
