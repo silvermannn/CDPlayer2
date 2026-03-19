@@ -55,6 +55,12 @@ extra-doc-files:    CHANGELOG.md
 common warnings
     ghc-options: -Wall
 
+    -- LANGUAGE extensions used by modules in this package.
+    default-language: GHC2024
+
+    -- Other library packages from which modules are imported.
+    build-depends:    base ^>=4.21.0.0, containers, mtl, monad-extras, random, aeson
+
 executable CDPlayer2
     -- Import common warning flags.
     import:           warnings
@@ -65,19 +71,19 @@ executable CDPlayer2
     -- Modules included in this executable, other than Main.
     other-modules: Data.Common Data.FastTree Data.Random.Stateful Data.Syntax.DependencyTree Data.Syntax.Rule Data.Syntax.Rule.Predicate Data.Syntax.Rule.Application Data.Syntax.Rule.Random Data.Syntax.Rule.Evaluation Data.Syntax.Rule.Evolution Data.Syntax.Sentence Data.Syntax.DependencyRelation Data.Syntax.Tag
 
-    -- LANGUAGE extensions used by modules in this package.
-    -- other-extensions:
-
-    -- Other library packages from which modules are imported.
-    build-depends:    base ^>=4.21.0.0, containers, mtl, monad-extras, random, aeson
-
     -- Directories containing source files.
-    hs-source-dirs:   app
+    hs-source-dirs:   src
 
     -- Base language which the package is written in.
-    default-language: GHC2024
-
     default-extensions: DeriveGeneric
                       , DeriveAnyClass
                       , OverloadedStrings 
 
+test-suite test
+   import:           warnings
+
+   type:             exitcode-stdio-1.0
+
+   hs-source-dirs:   tests
+
+   main-is:          Test.hs 

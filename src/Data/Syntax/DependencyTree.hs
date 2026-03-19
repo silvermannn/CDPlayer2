@@ -29,7 +29,7 @@ updateFringe dt = dt
 
 calcDependancyTreeDifference :: DependencyTree -> DependencyTree -> Int
 calcDependancyTreeDifference (DependencyTree Nothing) (DependencyTree Nothing) = 0
-calcDependancyTreeDifference (DependencyTree Nothing) (DependencyTree (Just dt)) = maxBound
-calcDependancyTreeDifference (DependencyTree (Just dt)) (DependencyTree Nothing) = maxBound
+calcDependancyTreeDifference (DependencyTree Nothing) (DependencyTree (Just dt)) = 100000
+calcDependancyTreeDifference (DependencyTree (Just dt)) (DependencyTree Nothing) = 100000
 calcDependancyTreeDifference (DependencyTree (Just dt1)) (DependencyTree (Just dt2)) =
   differenceLT dt1 dt2

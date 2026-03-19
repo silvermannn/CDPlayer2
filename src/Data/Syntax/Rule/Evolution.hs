@@ -72,3 +72,10 @@ evolutionStep p dt s ps = do
 infiniteEvolution ::
      EvolutionParameters -> DependencyTree -> Sentence -> Population -> StatefulRandom [Population]
 infiniteEvolution p dt s = iterateM (evolutionStep p dt s)
+
+getBestSpecie :: Population -> DependencyTree -> Sentence -> (RuleSet, Int)
+getBestSpecie (Population rs) dt s = best
+  where
+    ress = map (`parseSentence` s) rs
+    scores = zipWith (evaluateResults dt) ress rs
+    best = head $ sortBy (compare `on` snd) $ zip rs scores

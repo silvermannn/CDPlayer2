@@ -9,10 +9,10 @@ penaltyForRule :: Int
 penaltyForRule = 1
 
 penaltyForDependencyTree :: Int
-penaltyForDependencyTree = 0
+penaltyForDependencyTree = 5000
 
 penaltyForSentence :: Int
-penaltyForSentence = 100
+penaltyForSentence = 10000
 
 penaltyForResultSize :: Int
 penaltyForResultSize = 2

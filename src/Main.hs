@@ -20,7 +20,7 @@ import Data.Syntax.Sentence
 import Data.Syntax.Tag
 
 testWords :: [TaggedWord]
-testWords = [TaggedWord i i (i `mod` 2) [] | i <- [0, 1, 2, 3]]
+testWords = [TaggedWord i i i [] | i <- [0, 1, 2, 3]]
 
 testTree :: DependencyTree
 testTree =
@@ -46,9 +46,9 @@ params =
 evolParams :: EvolutionParameters
 evolParams =
   EvolutionParameters
-    { maxPopulationSize = 1000
-    , maxRulesetSize = 10
-    , mutationRate = 0.01
+    { maxPopulationSize = 10000
+    , maxRulesetSize = 50
+    , mutationRate = 0.1
     , survivalRate = 0.5
     , generationParams = params
     }
@@ -91,11 +91,13 @@ main = do
   print evolParams
   print "best rule 1"
   mapM_ print rs2
+  print score2
   mapM_ (\a -> showDependencyTree a >> print (calcDependancyTreeDifference a testTree))
     $ map (\(Result a _) -> a)
     $ parseSentence (RuleSet rs2) testSentence
   print "best rule 2"
   mapM_ print rs3
+  print score3
   mapM_ (\a -> showDependencyTree a >> print (calcDependancyTreeDifference a testTree))
     $ map (\(Result a _) -> a)
     $ parseSentence (RuleSet rs3) testSentence
@@ -103,7 +105,7 @@ main = do
     g = mkStdGen 31337
     (ps1, g1) = runState (generateInitialPopulation evolParams) g
     (ps2, g2) = runState (evolutionStep evolParams testTree testSentence ps1) g1
-    (Population ((RuleSet rs2):_)) = ps2
+    ((RuleSet rs2), score2) = getBestSpecie ps2 testTree testSentence
     (evol, _) = runState (infiniteEvolution evolParams testTree testSentence ps2) g2
     ps3 = last $ take 2000 evol
-    (Population ((RuleSet rs3):_)) = ps3
+    ((RuleSet rs3), score3) = getBestSpecie ps3 testTree testSentence
