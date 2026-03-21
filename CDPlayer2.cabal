@@ -58,23 +58,17 @@ common common
     -- LANGUAGE extensions used by modules in this package.
     default-language: GHC2024
 
-    -- Other library packages from which modules are imported.
-    build-depends:    base ^>=4.21.0.0, containers, mtl, monad-extras, random, aeson
-
     -- Base language which the package is written in.
     default-extensions: DeriveGeneric
                       , DeriveAnyClass
                       , OverloadedStrings 
 
-executable CDPlayer2
-    -- Import common warning flags.
+library parser
     import:           common
+    
+    build-depends:    base ^>=4.21.0.0, containers, mtl, monad-extras, random, aeson
 
-    -- .hs or .lhs file containing the Main module.
-    main-is:          Main.hs
-
-    -- Modules included in this executable, other than Main.
-    other-modules:    Data.Common
+    exposed-modules:  Data.Common
                       Data.FastTree
                       Data.Random.Stateful
                       Data.Syntax.DependencyTree
@@ -88,18 +82,33 @@ executable CDPlayer2
                       Data.Syntax.DependencyRelation
                       Data.Syntax.Tag
 
-    -- Directories containing source files.
-    hs-source-dirs:   src
+    hs-source-dirs:   parser
+
+
+executable CDPlayer2
+    import:           common
+
+    main-is:          Main.hs
+
+    hs-source-dirs:   app 
+
+    build-depends:    base ^>=4.21.0.0,
+                      mtl,
+                      random,
+                      parser 
 
 test-suite test
     import:           common
 
     type:             exitcode-stdio-1.0
 
-    hs-source-dirs:   src, tests
+    hs-source-dirs:   tests
 
     main-is:          Test.hs 
 
-    other-modules:    Data.Common
-
-    build-depends:    QuickCheck
+    build-depends:    base ^>=4.21.0.0,
+                      tasty,
+                      tasty-hunit,
+                      tasty-quickcheck,
+                      QuickCheck,
+                      parser

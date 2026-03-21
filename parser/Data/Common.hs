@@ -16,3 +16,7 @@ zipFull f g (x:xs) (y:ys) =
     LT -> f x : zipFull f g xs (y : ys)
     EQ -> g x y : zipFull f g xs ys
     GT -> f y : zipFull f g (x : xs) ys
+
+splits :: [a] -> [([a], a, [a])]
+splits [] = []
+splits (a:as) = scanl (\(xs, x, y:ys) _ -> (x : xs, y, ys)) ([], a, as) as
